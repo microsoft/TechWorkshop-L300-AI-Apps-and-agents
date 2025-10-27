@@ -3,14 +3,14 @@ from azure.ai.inference.models import SystemMessage, UserMessage
 
 tracer = trace.get_tracer(__name__)
 
-def call_router(router_client, router_prompt, formatted_history, phi_4_deployment):
-    """Call the router model and return its reply. Handles content filter errors."""
+def call_handoff(handoff_client, handoff_prompt, formatted_history, phi_4_deployment):
+    """Call the handoff model and return its reply. Handles content filter errors."""
     with tracer.start_as_current_span("custom_function") as span:
         span.set_attribute("custom_attribute", "value")    
         try:
-            router_response = router_client.complete(
+            handoff_response = handoff_client.complete(
                 messages=[
-                    SystemMessage(content=router_prompt),
+                    SystemMessage(content=handoff_prompt),
                     UserMessage(content=formatted_history),
                 ],
                 max_tokens=2048,
@@ -20,15 +20,15 @@ def call_router(router_client, router_prompt, formatted_history, phi_4_deploymen
                 frequency_penalty=0.0,
                 model=phi_4_deployment
             )
-            return router_response.choices[0].message.content
+            return handoff_response.choices[0].message.content
         except Exception as e:
             err_str = str(e)
             if "content_filter" in err_str or "ResponsibleAIPolicyViolation" in err_str:
                 return "__CONTENT_FILTER_ERROR__" + err_str
             raise
 
-def select_agent(router_reply: str, env_vars: dict):
-    reply = router_reply.lower()
+def select_agent(handoff_reply: str, env_vars: dict):
+    reply = handoff_reply.lower()
     if "cora" in reply:
         return env_vars.get('cora'), "cora"
     elif "interior_designer" in reply:

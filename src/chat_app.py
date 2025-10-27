@@ -39,7 +39,7 @@ from utils.message_utils import (
     get_rotating_message
 )
 from services.agent_service import get_or_create_agent_processor
-from services.router_service import call_router, select_agent
+from src.services.handoff_service import call_handoff, select_agent
 from services.fallback_service import call_fallback, cora_fallback
 
 load_dotenv(override=True)
@@ -152,7 +152,7 @@ def extract_product_names_from_response(response_data) -> str:
         return ""
 
 def format_chat_history(chat_history: Deque[Tuple[str, str]]) -> str:
-    """Format chat history for the router prompt."""
+    """Format chat history for the handoff prompt."""
     return "\n".join([
         f"user: {msg}" if role == "user" else f"bot: {msg}"
         for role, msg in chat_history
@@ -189,10 +189,10 @@ async def safe_operation(operation, fallback_value=None, operation_name="Unknown
         return fallback_value
 
 @tracer.start_as_current_span("assess_claims_with_context")
-def select_agent(router_reply: str, env_vars: Dict[str, str]) -> Tuple[Optional[str], Optional[str]]:
-    """Select agent and agent_name based on router reply."""
+def select_agent(handoff_reply: str, env_vars: Dict[str, str]) -> Tuple[Optional[str], Optional[str]]:
+    """Select agent and agent_name based on handoff reply."""
     start_time = time.time()
-    reply = router_reply.lower()
+    reply = handoff_reply.lower()
     if "cora" in reply:
         result = env_vars.get('cora'), "cora"
     elif "interior_designer_create_image" in reply:
@@ -209,15 +209,15 @@ def select_agent(router_reply: str, env_vars: Dict[str, str]) -> Tuple[Optional[
     log_timing("Agent Selection", start_time, f"Selected: {result[1] if result[1] else 'None'}")
     return result
 
-def call_router(router_client: ChatCompletionsClient, router_prompt: str, formatted_history: str, phi_4_deployment: str) -> str:
-    """Call the router model and return its reply. Handles content filter errors."""
+def call_handoff(handoff_client: ChatCompletionsClient, handoff_prompt: str, formatted_history: str, phi_4_deployment: str) -> str:
+    """Call the handoff model and return its reply. Handles content filter errors."""
     start_time = time.time()
     with tracer.start_as_current_span("custom_function") as span:
         span.set_attribute("custom_attribute", "value")    
         try:
-            router_response = router_client.complete(
+            handoff_response = handoff_client.complete(
                 messages=[
-                    SystemMessage(content=router_prompt),
+                    SystemMessage(content=handoff_prompt),
                     UserMessage(content=formatted_history),
                 ],
                 max_tokens=2048,
@@ -227,8 +227,8 @@ def call_router(router_client: ChatCompletionsClient, router_prompt: str, format
                 frequency_penalty=0.0,
                 model=phi_4_deployment
             )
-            result = router_response.choices[0].message.content
-            log_timing("Router Call", start_time, f"Model: {phi_4_deployment}")
+            result = handoff_response.choices[0].message.content
+            log_timing("Handoff Call", start_time, f"Model: {phi_4_deployment}")
             return result
         except Exception as e:
             # Check for content filter error
@@ -236,10 +236,10 @@ def call_router(router_client: ChatCompletionsClient, router_prompt: str, format
             if "content_filter" in err_str or "ResponsibleAIPolicyViolation" in err_str:
                 # Return a special marker string so the caller can handle it 
                 result = "__CONTENT_FILTER_ERROR__" + err_str
-                log_timing("Router Call (Content Filter Error)", start_time, f"Error: {err_str[:50]}...")
+                log_timing("Handoff Call (Content Filter Error)", start_time, f"Error: {err_str[:50]}...")
                 return result
             # Otherwise, re-raise
-            log_timing("Router Call (Exception)", start_time, f"Exception: {str(e)[:50]}...")
+            log_timing("Handoff Call (Exception)", start_time, f"Exception: {str(e)[:50]}...")
             raise
 
 def call_fallback(llm_client, fallback_prompt: str, gpt_deployment = "gpt-4.1"):
@@ -343,13 +343,13 @@ project_client = AIProjectClient(
     credential=DefaultAzureCredential(),
 )
 
-ROUTER_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts', 'routerPrompt.txt')
+HANDOFF_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts', 'handoffPrompt.txt')
 FALLBACK_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts', 'fallBackPrompt.txt')
 CORA_FALLBACK_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts', 'CoraPrompt.txt')
 CART_UPDATE_PROMPT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'prompts', 'addToCartPrompt.txt')
 
-with open(ROUTER_PROMPT_PATH, 'r') as file:
-    ROUTER_PROMPT = file.read()
+with open(HANDOFF_PROMPT_PATH, 'r') as file:
+    HANDOFF_PROMPT = file.read()
 
 with open(FALLBACK_PROMPT_PATH, 'r') as file:
     FALLBACK_PROMPT = file.read()
@@ -360,7 +360,7 @@ with open(CORA_FALLBACK_PROMPT_PATH, 'r') as file:
 with open(CART_UPDATE_PROMPT_PATH, 'r') as file:
     CART_UPDATE_PROMPT = file.read()
 
-router_client = ChatCompletionsClient(
+handoff_client = ChatCompletionsClient(
     endpoint=validated_env_vars['phi_4_endpoint'],
     credential=AzureKeyCredential(validated_env_vars['phi_4_api_key']),
     api_version=validated_env_vars['phi_4_api_version']
@@ -550,24 +550,24 @@ async def websocket_endpoint(websocket: WebSocket):
             #     logger.error("Error during single-agent response generation", exc_info=True)
             #     await websocket.send_text(fast_json_dumps({"answer": "Error during single-agent response generation", "error": str(e), "cart": persistent_cart}))
 
-            # # Run router
+            # # Run handoff service
             # try:
-            #     router_start_time = time.time()
+            #     handoff_start_time = time.time()
             #     formatted_history = format_chat_history(redact_bad_prompts_in_history(chat_history, bad_prompts))
-            #     logger.debug("Router agent execution initiated - commencing agent selection protocol")
-            #     with tracer.start_as_current_span("Router Agent Call"):
-            #         router_reply = call_router(
-            #             router_client,
-            #             ROUTER_PROMPT,
+            #     logger.debug("Handoff agent execution initiated - commencing agent selection protocol")
+            #     with tracer.start_as_current_span("Handoff Agent Call"):
+            #         handoff_reply = call_handoff(
+            #             handoff_client,
+            #             HANDOFF_PROMPT,
             #             formatted_history,
             #             validated_env_vars['phi_4_deployment']
             #         )
-            #     logger.debug("Router agent response received - agent selection criteria processed")
-            #     logger.debug(f"Router reply: {router_reply}")
-            #     log_timing("Router Processing", router_start_time, f"Reply length: {len(router_reply)} chars")
-            #     # Handle content filter error from router
-            #     if isinstance(router_reply, str) and router_reply.startswith("__CONTENT_FILTER_ERROR__"):
-            #         error_message = router_reply.replace("__CONTENT_FILTER_ERROR__", "").strip()
+            #     logger.debug("Handoff agent response received - agent selection criteria processed")
+            #     logger.debug(f"Handoff reply: {handoff_reply}")
+            #     log_timing("Handoff Processing", handoff_start_time, f"Reply length: {len(handoff_reply)} chars")
+            #     # Handle content filter error from handoff
+            #     if isinstance(handoff_reply, str) and handoff_reply.startswith("__CONTENT_FILTER_ERROR__"):
+            #         error_message = handoff_reply.replace("__CONTENT_FILTER_ERROR__", "").strip()
             #         # Add the last user message to bad_prompts
             #         if chat_history and chat_history[-1][0] == "user":
             #             bad_prompts.add(chat_history[-1][1])
@@ -579,8 +579,8 @@ async def websocket_endpoint(websocket: WebSocket):
             #         }))
             #         continue
             # except Exception as e:
-            #     logger.error("Error during router call", exc_info=True)
-            #     await websocket.send_text(fast_json_dumps({"answer": "Error during router call", "error": str(e), "cart": persistent_cart}))
+            #     logger.error("Error during handoff call", exc_info=True)
+            #     await websocket.send_text(fast_json_dumps({"answer": "Error during handoff call", "error": str(e), "cart": persistent_cart}))
             #     continue
             
             # # Check for 'cart' in the user query before agent selection
@@ -647,7 +647,7 @@ async def websocket_endpoint(websocket: WebSocket):
             # # Fallback message if no agent is selected
             # try:
             #     agent_selection_start_time = time.time()
-            #     agent_selected, agent_name = select_agent(router_reply, validated_env_vars)
+            #     agent_selected, agent_name = select_agent(handoff_reply, validated_env_vars)
             #     if not agent_selected or not agent_name:
             #         await websocket.send_text(fast_json_dumps({"answer": "Sorry, I could not determine the right agent.", "agent": None, "cart": persistent_cart}))
             #         continue

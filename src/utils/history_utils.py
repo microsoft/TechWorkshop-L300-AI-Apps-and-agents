@@ -3,7 +3,7 @@ from typing import Deque, Tuple
 import json
 
 def format_chat_history(chat_history: Deque[Tuple[str, str]]) -> str:
-    """Format chat history for the router prompt."""
+    """Format chat history for the handoff prompt."""
     return "\n".join([
         f"user: {msg}" if role == "user" else f"bot: {msg}"
         for role, msg in chat_history
