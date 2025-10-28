@@ -39,7 +39,7 @@ from utils.message_utils import (
     get_rotating_message
 )
 from services.agent_service import get_or_create_agent_processor
-from src.services.handoff_service import call_handoff, select_agent
+from services.handoff_service import call_handoff, select_agent
 from services.fallback_service import call_fallback, cora_fallback
 
 load_dotenv(override=True)
