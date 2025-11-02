@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from azure.cosmos import CosmosClient, PartitionKey
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -22,11 +23,10 @@ df['content_for_vector'] = (
 )
 
 # 2. Connect to Cosmos DB
-client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
-database = client.create_database_if_not_exists(id=DATABASE_NAME)
-container = database.create_container_if_not_exists(
-    id=CONTAINER_NAME,
-    partition_key=PartitionKey(path="/ProductID")
+client = CosmosClient(COSMOS_ENDPOINT, DefaultAzureCredential()) # pyright: ignore[reportArgumentType]
+database = client.get_database_client(database=DATABASE_NAME) # pyright: ignore[reportArgumentType]
+container = database.get_container_client(
+    container=CONTAINER_NAME # pyright: ignore[reportArgumentType]
 )
 
 # 3. Upload items
