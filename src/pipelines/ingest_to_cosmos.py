@@ -27,7 +27,7 @@ df['content_for_vector'] = (
 
 # 2. Connect to Cosmos DB
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 
 def get_cosmos_client(endpoint: str | None, key: str | None = None):
