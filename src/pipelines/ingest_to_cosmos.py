@@ -1,7 +1,9 @@
 import pandas as pd
 import os
 from azure.cosmos import CosmosClient, PartitionKey
+from azure.identity import DefaultAzureCredential
 from dotenv import load_dotenv
+
 load_dotenv()
 
 # CONFIGURATIONS - Replace with your actual values
@@ -22,7 +24,11 @@ df['content_for_vector'] = (
 )
 
 # 2. Connect to Cosmos DB
-client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
+
+credential = DefaultAzureCredential()
+client = CosmosClient(COSMOS_ENDPOINT, credential=credential)
+#client = CosmosClient(COSMOS_ENDPOINT, COSMOS_KEY)
+
 database = client.create_database_if_not_exists(id=DATABASE_NAME)
 container = database.create_container_if_not_exists(
     id=CONTAINER_NAME,
