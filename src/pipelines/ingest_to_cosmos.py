@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 import os
 from azure.cosmos import CosmosClient, PartitionKey
