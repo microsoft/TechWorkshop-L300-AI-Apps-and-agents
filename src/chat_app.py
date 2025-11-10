@@ -29,7 +29,7 @@ from app.tools.imageCreationTool import create_image
 import logging
 import aiohttp
 from concurrent.futures import ThreadPoolExecutor
-# from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
+from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
 
 # Import modularized utilities and services
 from utils.env_utils import load_env_vars, validate_env_vars
@@ -57,6 +57,7 @@ thread_pool = ThreadPoolExecutor(max_workers=4)
 application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
 configure_azure_monitor(connection_string=application_insights_connection_string)
 # OpenAIInstrumentor().instrument()
+os.environ["AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED"] = "true"
 
 scenario = os.path.basename(__file__)
 tracer = trace.get_tracer(__name__)
