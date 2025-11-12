@@ -17,14 +17,16 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create .env inside container from secret
-RUN --mount=type=secret,id=env cp /run/secrets/env .env
-
-# Copy the rest of the code
+# Copy the rest of the code (excluding .env via .dockerignore if present)
 COPY . .
 
-# Copy .env file into the image (for python-dotenv)
-COPY .env .env
+# Create .env from build secret if available, otherwise use local .env
+RUN --mount=type=secret,id=env \
+    if [ -f /run/secrets/env ]; then \
+        cp /run/secrets/env .env; \
+    elif [ ! -f .env ]; then \
+        echo "Warning: No .env file found" && touch .env; \
+    fi
 
 # Expose the port (default FastAPI/uvicorn port)
 EXPOSE 8000
