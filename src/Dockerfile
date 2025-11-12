@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create .env inside container from secret
+RUN --mount=type=secret,id=env cp /run/secrets/env .env
 
 # Copy the rest of the code
 COPY . .

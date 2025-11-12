@@ -35,7 +35,7 @@ Skip the verification step at the end.
   -ResourceGroup "techworkshop-l300-ai-agents1" `
   -AiSearchName "my-search-service" `
   -CosmosDbAccountName "my-cosmosdb" `
-  -AiFoundryName "my-foundry" `
+  -AiFoundryName "my-foundry" `  
   -AiProjectName "my-project"
 #>
 
