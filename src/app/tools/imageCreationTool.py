@@ -2,14 +2,16 @@ import base64
 import requests
 from io import BytesIO
 from PIL import Image
-from azure.storage.blob import BlobServiceClient, ContentSettings
 import os
 from dotenv import load_dotenv
 from uuid import uuid4
+import sys
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+from utils.storage_utils import get_storage_manager
 
 load_dotenv()
 
-blob_connection_string = os.getenv("blob_connection_string", "")
+# Use Managed Identity instead of connection string
 storage_account_name = os.getenv("storage_account_name", "")
 container_name = os.getenv("storage_container_name", "")
 # NOTE: These environment variables should be set in your .env file
@@ -39,20 +41,19 @@ def create_image(text, image_url):
             pil_image.save(img_byte_arr, format='PNG')
             img_byte_arr.seek(0)
 
-            blob_service_client = BlobServiceClient.from_connection_string(blob_connection_string)
-            container_client = blob_service_client.get_container_client(container_name)
-
+            # Use StorageManager with Managed Identity authentication
+            storage_manager = get_storage_manager()
             blob_name = f"image_{uuid4().hex}.png"
             
-            container_client.upload_blob(
-                name=blob_name,
+            # Upload the image
+            blob_url = storage_manager.upload_blob(
+                blob_name=blob_name,
                 data=img_byte_arr,
-                overwrite=False,
-                content_settings=ContentSettings(content_type='image/png')
+                content_type='image/png'
             )
-
-            blob_url = f"https://{storage_account_name}.blob.core.windows.net/{container_name}/{blob_name}"
+            
             return blob_url
+            
         except Exception as e:
             print("Error uploading image to blob:", e)
             return None
