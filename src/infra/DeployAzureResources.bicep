@@ -106,6 +106,9 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-04-01-pre
 resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
   name: searchServiceName
   location: location
+  identity: {
+    type: 'SystemAssigned'
+  }
   sku: {
     name: 'standard'
   }
@@ -203,7 +206,14 @@ resource appServiceApp 'Microsoft.Web/sites@2022-09-01' = {
 
 // Cosmos DB built-in data plane role IDs
 // Reference: https://learn.microsoft.com/en-us/connectors/documentdb/#microsoft-entra-id-authentication-and-cosmos-db-connector
+var cosmosDbBuiltInDataReaderRoleId = '00000000-0000-0000-0000-000000000001'
 var cosmosDbBuiltInDataContributorRoleId = '00000000-0000-0000-0000-000000000002'
+
+// Azure RBAC role IDs
+// Reference: https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
+var cosmosDbAccountReaderRoleId = 'fbdf93bf-df7d-467e-a4d2-9458aa1360c8'
+var cognitiveServicesOpenAIUserRoleId = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+var cognitiveServicesContributorRoleId = '25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68'
 
 @description('Assigns Cosmos DB Built-in Data Contributor role to the specified user')
 resource cosmosDbDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
@@ -213,6 +223,74 @@ resource cosmosDbDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAcc
     roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataContributorRoleId}'
     principalId: userPrincipalId
     scope: cosmosDbAccount.id
+  }
+}
+
+// Role assignments for AI Search managed identity
+
+@description('Assigns Cosmos DB Account Reader Role to AI Search')
+resource searchCosmosDbAccountReaderRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbAccountReaderRoleId)
+  scope: cosmosDbAccount
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cosmosDbAccountReaderRoleId)
+    principalId: searchService.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+@description('Assigns Cosmos DB Built-in Data Reader role to AI Search')
+resource searchCosmosDbDataReaderRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbBuiltInDataReaderRoleId)
+  parent: cosmosDbAccount
+  properties: {
+    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataReaderRoleId}'
+    principalId: searchService.identity.principalId
+    scope: cosmosDbAccount.id
+  }
+}
+
+@description('Assigns Cosmos DB Built-in Data Contributor role to AI Search')
+resource searchCosmosDbDataContributorRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbBuiltInDataContributorRoleId)
+  parent: cosmosDbAccount
+  properties: {
+    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataContributorRoleId}'
+    principalId: searchService.identity.principalId
+    scope: cosmosDbAccount.id
+  }
+}
+
+@description('Assigns Cognitive Services OpenAI User role to AI Search on AI Project')
+resource searchProjectOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiProject.id, searchService.id, cognitiveServicesOpenAIUserRoleId)
+  scope: aiProject
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: searchService.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+@description('Assigns Cognitive Services OpenAI User role to AI Search on AI Foundry')
+resource searchFoundryOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiFoundry.id, searchService.id, cognitiveServicesOpenAIUserRoleId)
+  scope: aiFoundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: searchService.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+@description('Assigns Cognitive Services Contributor role to AI Search on AI Project')
+resource searchProjectContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiProject.id, searchService.id, cognitiveServicesContributorRoleId)
+  scope: aiProject
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesContributorRoleId)
+    principalId: searchService.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
