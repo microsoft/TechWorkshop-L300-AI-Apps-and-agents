@@ -1,0 +1,45 @@
+name: Deploy Customer Loyalty Agent
+
+on:
+  push:
+    # Paths include the initializer, prompt, workflow, and any associated tools
+    paths:
+      - 'src/app/agents/customerLoyaltyAgent_initializer.py'
+      - 'src/app/tools/discountLogic.py'
+      - 'src/prompts/CustomerLoyaltyAgentPrompt.txt'
+      - '.github/workflows/deploy-customer-loyalty-agent.yml'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  run-customer-loyalty-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file from secret
+        run: 'echo "$ENV" > src/.env'
+        shell: bash
+        env:
+          ENV: ${{ secrets.ENV }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r src/requirements.txt
+
+      - name: Login via Azure CLI
+        uses: azure/login@v2.1.1
+        with:
+            creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Run customer loyalty agent initializer
+        run: |
+          cd app/
+          python app/agents/customerLoyaltyAgent_initializer.py
