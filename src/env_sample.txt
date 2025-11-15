@@ -9,12 +9,6 @@ AZURE_AI_AGENT_ENDPOINT=""
 AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME="gpt-4.1"
 AZURE_AI_AGENT_API_VERSION="2024-12-01-preview"
 
-# Agent IDs
-interior_designer=""
-customer_loyalty=""
-inventory_agent=""
-cora=""
-
 # GPT-4.1 credentials
 gpt_endpoint=""
 gpt_deployment="gpt-4.1"
@@ -46,3 +40,9 @@ CONTAINER_NAME="product_catalog"
 
 # Application Insights credentials
 APPLICATIONINSIGHTS_CONNECTION_STRING=""
+
+# Agent IDs
+interior_designer=""
+customer_loyalty=""
+inventory_agent=""
+cora=""
