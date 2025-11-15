@@ -1,3 +1,6 @@
+@description('Object ID of the user/principal to grant Cosmos DB data access')
+param userPrincipalId string
+
 @minLength(1)
 @description('Primary location for all resources.')
 param location string = resourceGroup().location
@@ -198,6 +201,20 @@ resource appServiceApp 'Microsoft.Web/sites@2022-09-01' = {
     }
 }
 
+// Cosmos DB built-in data plane role IDs
+// Reference: https://learn.microsoft.com/en-us/connectors/documentdb/#microsoft-entra-id-authentication-and-cosmos-db-connector
+var cosmosDbBuiltInDataContributorRoleId = '00000000-0000-0000-0000-000000000002'
+
+@description('Assigns Cosmos DB Built-in Data Contributor role to the specified user')
+resource cosmosDbDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(cosmosDbAccount.id, userPrincipalId, cosmosDbBuiltInDataContributorRoleId)
+  parent: cosmosDbAccount
+  properties: {
+    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataContributorRoleId}'
+    principalId: userPrincipalId
+    scope: cosmosDbAccount.id
+  }
+}
 
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
 output storageAccountName string = storageAccount.name
