@@ -242,7 +242,7 @@ def call_handoff(handoff_client: ChatCompletionsClient, handoff_prompt: str, for
             log_timing("Handoff Call (Exception)", start_time, f"Exception: {str(e)[:50]}...")
             raise
 
-def call_fallback(llm_client, fallback_prompt: str, gpt_deployment = "gpt-4.1"):
+def call_fallback(llm_client, fallback_prompt: str, gpt_deployment = "gpt-5-mini"):
     """Call the fallback model and return its reply."""
     start_time = time.time()
     

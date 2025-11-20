@@ -1,19 +1,19 @@
 OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT="true"
 
-# Azure AI Foundry credentials
+# Microsoft Foundry credentials
 AZURE_OPENAI_ENDPOINT=""
 AZURE_OPENAI_KEY=""
-AZURE_OPENAI_API_VERSION="2024-12-01-preview"
+AZURE_OPENAI_API_VERSION="2025-01-01-preview"
 
 AZURE_AI_AGENT_ENDPOINT=""
-AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME="gpt-4.1"
-AZURE_AI_AGENT_API_VERSION="2024-12-01-preview"
+AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME="gpt-5-mini"
+AZURE_AI_AGENT_API_VERSION="2025-01-01-preview"
 
-# GPT-4.1 credentials
+# GPT credentials
 gpt_endpoint=""
-gpt_deployment="gpt-4.1"
+gpt_deployment="gpt-5-mini"
 gpt_api_key=""
-gpt_api_version="2024-12-01-preview"
+gpt_api_version="2025-01-01-preview"
 
 # Phi-4 credentials
 phi_4_endpoint=""
@@ -40,6 +40,9 @@ CONTAINER_NAME="product_catalog"
 
 # Application Insights credentials
 APPLICATIONINSIGHTS_CONNECTION_STRING=""
+
+# MCP Server URL (should be the app service URL)
+MCP_SERVER_URL="http://<APP_SERVICE_URL>/mcp-inventory/sse"
 
 # Agent IDs
 interior_designer=""

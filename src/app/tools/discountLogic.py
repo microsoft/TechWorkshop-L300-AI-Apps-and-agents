@@ -1,6 +1,4 @@
 import os
-import pyodbc
-import sqlalchemy as sa
 import pandas as pd
 import urllib
 import struct
