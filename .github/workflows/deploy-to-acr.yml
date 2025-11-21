@@ -1,0 +1,51 @@
+name: Deploy to Azure Container Registry
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+
+env:
+  REGISTRY_NAME: ahqjlh3o6iwvicosureg  # Replace with your ACR name
+  IMAGE_NAME: techworkshop-app
+  
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_NAME }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Create .env file from secret
+        run: |
+          echo "${{ secrets.ENV }}" > src/.env
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Clean up .env file
+        if: always()
+        run: |
+          rm -f src/.env
