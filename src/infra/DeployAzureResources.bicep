@@ -8,6 +8,9 @@ var storageAccountName = '${uniqueString(resourceGroup().id)}sa'
 var aiFoundryName = 'aif-${uniqueString(resourceGroup().id)}'
 var aiProjectName = 'proj-${uniqueString(resourceGroup().id)}'
 var searchServiceName = '${uniqueString(resourceGroup().id)}-search'
+
+
+
 var webAppName = '${uniqueString(resourceGroup().id)}-app'
 var appServicePlanName = '${uniqueString(resourceGroup().id)}-cosu-asp'
 var logAnalyticsName = '${uniqueString(resourceGroup().id)}-cosu-la'
