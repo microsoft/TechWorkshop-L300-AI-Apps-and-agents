@@ -44,6 +44,7 @@ out/
 # Misc
 *.swp
 *.swo
+this.txt
 
 # Secret files
 .env
