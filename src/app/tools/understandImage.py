@@ -1,23 +1,21 @@
 import os
-import base64
 from openai import AzureOpenAI
-from dotenv import load_dotenv
-import numpy as np
 import time
 
-# Load environment variables (Azure endpoint, deployment, keys, etc.)
+from dotenv import load_dotenv
 load_dotenv()
 
 # Retrieve credentials from .env file or environment
 endpoint = os.getenv("gpt_endpoint")
 deployment = os.getenv("gpt_deployment")
 api_key = os.getenv("gpt_api_key")
+api_version = os.getenv("gpt_api_version")
 
 # Initialize Azure OpenAI client for GPT model
 client = AzureOpenAI(
     azure_endpoint=endpoint,
     api_key=api_key,
-    api_version="2025-01-01-preview",
+    api_version=api_version,
 )
 
 def get_image_description(image_url):
@@ -56,14 +54,6 @@ def get_image_description(image_url):
         stream=False
     )
     end_sum = time.time()
-    print(f"summarize_video Execution Time: {end_sum - start_time} seconds")
+    print(f"get_image_description Execution Time: {end_sum - start_time} seconds")
     # Return summary content
     return completion.choices[0].message.content
-
-
-# # Example usage
-##tested with local path for video: C:\MSFT 2025\Painter Tape.mp4
-# image_url =  "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
-# summary = get_image_description(image_url)
-# print(summary)
-

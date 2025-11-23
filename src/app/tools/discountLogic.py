@@ -1,10 +1,5 @@
 import os
 import pandas as pd
-import urllib
-import struct
-from itertools import chain, repeat
-from azure.identity import ClientSecretCredential
-import base64
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,7 +12,7 @@ import time
 
 # Enable Azure Monitor tracing
 application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
-configure_azure_monitor(connection_string=application_insights_connection_string)
+# configure_azure_monitor(connection_string=application_insights_connection_string)
 # OpenAIInstrumentor().instrument()
 
 # scenario = os.path.basename(__file__)
@@ -27,6 +22,7 @@ configure_azure_monitor(connection_string=application_insights_connection_string
 endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
 deployment = os.getenv("gpt_deployment")
 api_key = os.getenv("AZURE_OPENAI_KEY")
+api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(current_dir))  # Go up 2 levels from src/tools/ to root
@@ -137,7 +133,7 @@ def calculate_discount(CustomerID):
         client = AzureOpenAI(
             azure_endpoint=endpoint,
             api_key=api_key,
-            api_version="2025-01-01-preview",
+            api_version=api_version,
         )
         # print(f"loyalty_info is:{loyalty_info}, invoice value: {InvoiceValue} and transaction_info is:{transaction_info}")
         prompt= "Bruno's total transaction price in this year"+ transaction_info + "and his data"+str(loyalty_info)
@@ -190,8 +186,3 @@ def calculate_discount(CustomerID):
     end_time = time.time()
     # print(f"calculate_discount Execution Time: {end_time - start_time} seconds")
     return discount_info
-
-# # Example usage:
-# CustomerID = "CUST001"
-# discount_amount=calculate_discount(CustomerID)
-# print(f"Discount amount for Customer {discount_amount}")

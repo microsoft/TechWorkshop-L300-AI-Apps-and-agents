@@ -9,7 +9,7 @@ has_children: true
 
 ## Scenario
 
-In the previous exercises, you built and extended a multimodal AI shopping assistant using Microsoft Foundry and the Agent2Agent (A2A) Protocol. The assistant allows customers to upload images and short videos, ask questions regarding the set of products available from Zava, and make purchases, all from a multimodal chat interface. You also learned how to implement observability in Microsoft Foundry to monitor the performance and health of your AI applications. But these deployments and configurations were done manually.
+In the previous exercises, you built and extended a multimodal AI shopping assistant using Microsoft Foundry and the Agent2Agent (A2A) Protocol. The assistant allows customers to upload images, ask questions regarding the set of products available from Zava, and make purchases, all from a multimodal chat interface. You also learned how to implement observability in Microsoft Foundry to monitor the performance and health of your AI applications. But these deployments and configurations were done manually.
 
 In this exercise, you will learn how to use GitHub Copilot to generate GitHub Actions workflows that automate the deployment of an Azure Container Registry and Microsoft Foundry agents. By the end of this exercise, you will have a solid understanding of how to use GitHub Actions to streamline your DevOps processes and improve the efficiency of your development workflow.
 

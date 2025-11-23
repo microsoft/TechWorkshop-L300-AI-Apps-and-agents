@@ -4,6 +4,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Initialize Azure OpenAI and Azure Cognitive Search credentials
 SEARCH_ENDPOINT = os.environ.get("SEARCH_ENDPOINT")
 SEARCH_KEY = os.environ.get("SEARCH_KEY")
@@ -26,8 +29,6 @@ search_client = SearchClient(
 )
 
 # Main function to provide product recommendations with inventory check
-
-
 def product_recommendations(question):
     """
     Input: 
@@ -36,8 +37,6 @@ def product_recommendations(question):
         products_with_inventory (list): Product json with product information
     """
 
-    #add painters tape for narrative
-    #question = question + " painters tape"
     semantic_configuration_name = INDEX_NAME + "-semantic-configuration"
     
     # Step 1: Search

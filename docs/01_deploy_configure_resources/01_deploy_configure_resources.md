@@ -9,7 +9,7 @@ has_children: true
 
 ## Scenario
 
-This training will have you work through a customer proof of concept regarding Microsoft Foundry. The scenario entails building a proof of concept for Zava, a retail chain that specializes in "do-it-yourself" solutions for home improvement projects. Zava would like to build a shopping assistant that helps customers choose the correct products for their own home improvement projects. Customers will be able to upload images and short videos, ask questions regarding the set of products available from Zava, and make purchases, all from a multimodal chat interface.
+This training will have you work through a customer proof of concept regarding Microsoft Foundry. The scenario entails building a proof of concept for Zava, a retail chain that specializes in "do-it-yourself" solutions for home improvement projects. Zava would like to build a shopping assistant that helps customers choose the correct products for their own home improvement projects. Customers will be able to upload images, ask questions regarding the set of products available from Zava, and make purchases, all from a multimodal chat interface.
 
 In this first exercise, we will set the stage for Zava by deploying out resources needed for the proof of concept, as well as ensuring that we have the client tools necessary to run through the remaining exercises.
 

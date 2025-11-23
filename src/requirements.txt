@@ -4,7 +4,7 @@ openai==2.8.0
 pandas==2.3.3
 azure-cosmos==4.14.2
 semantic-kernel==1.37.0
-azure-ai-projects==2.0.0b2
+azure-ai-projects==1.1.0b4
 azure-ai-agents==1.2.0b6
 azure-ai-inference==1.0.0b9
 azure-ai-evaluation[redteam]==1.13.7

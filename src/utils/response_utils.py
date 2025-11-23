@@ -1,5 +1,7 @@
 import json
 import re
+import orjson
+from utils.message_utils import fast_json_dumps
 
 def extract_bot_reply(msg) -> str:
     """Extract the bot reply from the agent processor message."""
@@ -9,6 +11,45 @@ def extract_bot_reply(msg) -> str:
         result = match.group(1)
         return result
     return msg
+
+def extract_product_names_from_response(response_data) -> str:
+    """Extract product names from response data and format them."""
+    try:
+        # Handle string response data
+        if isinstance(response_data, str):
+            try:
+                response_data = orjson.loads(response_data)
+            except (orjson.JSONDecodeError, TypeError):
+                return ""
+        
+        # Handle dictionary response
+        if isinstance(response_data, dict):
+            products = response_data.get("products")
+            if products:
+                # Handle products as string (JSON)
+                if isinstance(products, str):
+                    try:
+                        products_list = orjson.loads(products)
+                    except (orjson.JSONDecodeError, TypeError):
+                        return ""
+                # Handle products as list
+                elif isinstance(products, list):
+                    products_list = products
+                else:
+                    return ""
+                
+                # Extract names from products
+                if products_list and isinstance(products_list, list):
+                    names = []
+                    for product in products_list:
+                        if isinstance(product, dict) and "name" in product:
+                            names.append(product["name"])
+                    if names:
+                        return f" [Products Mentioned: {', '.join(names)}]"
+        
+        return ""
+    except Exception:
+        return ""
 
 def parse_agent_response(response: str) -> dict:
     """
@@ -45,7 +86,6 @@ def parse_agent_response(response: str) -> dict:
                     "products": products,
                     "discount_percentage": str(discount_percentage) if discount_percentage else "",
                     "image_url": image_output,
-                    "video_url": "",
                     "additional_data": "",
                     "cart": cart
                 }
@@ -56,7 +96,6 @@ def parse_agent_response(response: str) -> dict:
                     "products": "",
                     "discount_percentage": "",
                     "image_url": "",
-                    "video_url": "",
                     "additional_data": ""
                 }
         elif isinstance(parsed_response, dict):
@@ -76,7 +115,6 @@ def parse_agent_response(response: str) -> dict:
                 "products": parsed_response.get("products", ""),
                 "discount_percentage": str(parsed_response.get("discount_percentage", "")) if parsed_response.get("discount_percentage") else "",
                 "image_url": parsed_response.get("image_url", ""),
-                "video_url": parsed_response.get("video_url", ""),
                 "additional_data": parsed_response.get("additional_data", ""),
                 "cart": parsed_response.get("cart", [])
             }
@@ -87,7 +125,6 @@ def parse_agent_response(response: str) -> dict:
                 "products": "",
                 "discount_percentage": "",
                 "image_url": "",
-                "video_url": "",
                 "additional_data": "",
                 "cart": []
             }
@@ -98,48 +135,6 @@ def parse_agent_response(response: str) -> dict:
             "products": "",
             "discount_percentage": "",
             "image_url": "",
-            "video_url": "",
             "additional_data": "",
             "cart": []
         }
-
-def merge_cart_and_cora(cart_reply_raw: str, cora_reply_raw: str) -> dict:
-    """
-    Merge cart and cora responses:
-    - answer and image_output from cora
-    - products from cart (as a list)
-    Handles code blocks and JSON parsing robustly.
-    """
-    # Parse cart products (should be a list)
-    cart_products = []
-    # Try to extract JSON (object or array) from code block
-    cart_codeblock_match = re.search(r'```(?:json)?\s*([\[{].*[\]}])\s*```', cart_reply_raw, re.DOTALL)
-    if cart_codeblock_match:
-        cart_json_str = cart_codeblock_match.group(1).strip()
-    else:
-        cart_json_match = re.search(r'([\[{].*[\]}])', cart_reply_raw, re.DOTALL)
-        if cart_json_match:
-            cart_json_str = cart_json_match.group(1).strip()
-        else:
-            cart_json_str = cart_reply_raw
-    try:
-        cart_parsed = json.loads(cart_json_str)
-        # Handle both direct list and object with cart property
-        if isinstance(cart_parsed, list):
-            cart_products = cart_parsed
-        elif isinstance(cart_parsed, dict) and "cart" in cart_parsed:
-            cart_products = cart_parsed["cart"]
-        else:
-            cart_products = []
-    except Exception:
-        cart_products = []
-
-    # Parse cora reply (should be a dict)
-    cora_json = parse_agent_response(cora_reply_raw)
-    # If parse_agent_response returns products as a string, ignore it
-    merged = {
-        "answer": cora_json.get("answer", ""),
-        "image_output": cora_json.get("image_output", []),
-        "cart": cart_products
-    }
-    return merged 

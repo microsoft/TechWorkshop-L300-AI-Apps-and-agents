@@ -237,8 +237,6 @@
                     <input id="messageInput" type="text" autocomplete="off" placeholder="Type your message..."/>
                     <label><input type="checkbox" id="sendImageCheckbox" onchange="toggleImageInput()"> Image</label>
                     <input id="imageUrlInput" type="text" placeholder="Image URL" style="display:none; margin-left:0.5em; max-width:200px;"/>
-                    <label><input type="checkbox" id="sendVideoCheckbox" onchange="toggleVideoInput()"> Video</label>
-                    <input id="videoUrlInput" type="text" placeholder="Video URL" style="display:none; margin-left:0.5em; max-width:200px;"/>
                     <button onclick="sendMessage()">Send</button>
                 </div>
             </div>
@@ -326,12 +324,6 @@
             var imageUrlInput = document.getElementById("imageUrlInput");
             imageUrlInput.style.display = checkbox.checked ? "inline" : "none";
         }
-
-        function toggleVideoInput() {
-            var checkbox = document.getElementById("sendVideoCheckbox");
-            var videoUrlInput = document.getElementById("videoUrlInput");
-            videoUrlInput.style.display = checkbox.checked ? "inline" : "none";
-        }
         
         function addMessage(role, text, hasImage) {
             var chat = document.getElementById('chat');
@@ -358,14 +350,11 @@
         function sendMessage() {
             var input = document.getElementById("messageInput");
             var imageCheckbox = document.getElementById("sendImageCheckbox");
-            var videoCheckbox = document.getElementById("sendVideoCheckbox");
             var hasImage = imageCheckbox.checked;
-            var hasVideo = videoCheckbox.checked;
             var message = input.value;
             var payload = {
                 conversation_history: formatConversationHistory(),
                 has_image: hasImage,
-                has_video: hasVideo,
                 customer_id: "CUST001",
                 message: message
             };
@@ -389,27 +378,9 @@
                 }
             }
             
-            // Handle video
-            if (hasVideo) {
-                var videoUrlInput = document.getElementById("videoUrlInput");
-                var videoUrl = videoUrlInput.value;
-                if (!videoUrl) {
-                    alert("Please enter a video URL.");
-                    return;
-                }
-                payload.video_url = videoUrl;
-                addMessage('user', message, false);
-                conversationHistory.push({role: 'user', msg: message, has_video: true, video_url: videoUrl});
-                addDebugEntry('outgoing', 'Client Request (with video)', payload);
-                ws.send(JSON.stringify(payload));
-                input.value = '';
-                videoUrlInput.value = '';
-                return;
-            }
-            
-            // No image or video
+            // No image
             addMessage('user', message, false);
-            conversationHistory.push({role: 'user', msg: message, has_image: false, has_video: false});
+            conversationHistory.push({role: 'user', msg: message, has_image: false});
             addDebugEntry('outgoing', 'Client Request', payload);
             ws.send(JSON.stringify(payload));
             input.value = '';
