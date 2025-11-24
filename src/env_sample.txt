@@ -46,7 +46,8 @@ APPLICATIONINSIGHTS_CONNECTION_STRING=""
 MCP_SERVER_URL="http://localhost:8000/mcp-inventory/sse"
 
 # Agent IDs
-interior_designer=""
 customer_loyalty=""
 inventory_agent=""
+interior_designer=""
 cora=""
+cart_manager=""
