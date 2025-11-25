@@ -26,5 +26,5 @@ The lab is available as GitHub pages [here](https://microsoft.github.io/TechWork
 
 For running this lab you will need:
 
-* An Azure subscription with access to Microsoft Foundry.
+* An external MCAPS subscription with access to Microsoft Foundry. Microsoft EMU accounts will not have sufficient privileges to perform all of the actions necessary.
 * A desktop, laptop, or virtual machine and access to install software on that machine.
