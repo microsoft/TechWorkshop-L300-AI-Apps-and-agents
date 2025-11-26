@@ -14,6 +14,8 @@ with open(CORA_PROMPT_TARGET, 'r', encoding='utf-8') as file:
     CORA_PROMPT = file.read()
 
 project_endpoint = os.environ["AZURE_AI_AGENT_ENDPOINT"]
+agent_id = os.environ["cora"]
+
 
 project_client = AIProjectClient(
     endpoint=project_endpoint,
@@ -22,10 +24,28 @@ project_client = AIProjectClient(
 
 
 with project_client:
-    agent = project_client.agents.create_agent(
-        model=os.environ["AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME"],  # Model deployment name
-        name="Cora",  # Name of the agent
-        instructions=CORA_PROMPT,  # Instructions for the agent
-        # toolset=toolset
-    )
-    print(f"Created agent, ID: {agent.id}")
+    agent_exists = False
+    if agent_id:
+        # Check if agent exists.
+        agent = project_client.agents.get_agent(agent_id)
+        print(f"Retrieved existing agent, ID: {agent.id}")
+        agent_exists = True
+    
+    if agent_exists:
+        agent = project_client.agents.update_agent(
+            agent_id=agent.id,
+            model=os.environ["AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME"],  # Model deployment name
+            name="Cora",  # Name of the agent
+            instructions=CORA_PROMPT,  # Updated instructions for the agent
+            # toolset=toolset
+        )
+        print(f"Updated agent, ID: {agent.id}")
+    else:
+        agent = project_client.agents.create_agent(
+            model=os.environ["AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME"],  # Model deployment name
+            name="Cora",  # Name of the agent
+            instructions=CORA_PROMPT,  # Instructions for the agent
+            # toolset=toolset
+        )
+        print(f"Created agent, ID: {agent.id}")
+
