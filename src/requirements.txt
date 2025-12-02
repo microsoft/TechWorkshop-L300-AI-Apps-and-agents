@@ -26,6 +26,6 @@ numpy==2.2.6
 a2a-sdk[sqlite]==0.3.12
 sse-starlette==3.0.3
 starlette==0.50.0
-mcp==1.21.2
+mcp==1.23.0
 httpx==0.28.1
 fastmcp==2.13.1
