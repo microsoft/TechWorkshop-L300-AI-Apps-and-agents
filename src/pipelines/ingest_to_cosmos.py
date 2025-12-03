@@ -42,7 +42,7 @@ def get_cosmos_client(endpoint: str | None, key: str | None = None):
     # Try AAD first
     try:
         logger.info("Attempting to authenticate to Cosmos DB using DefaultAzureCredential (AAD)...")
-        credential = DefaultAzureCredential()
+        credential = DefaultAzureCredential(exclude_system_assigned_identity=True)
         client = CosmosClient(endpoint, credential=credential)
 
         # perform a light operation to validate the credential (will raise if unauthorized)

@@ -48,7 +48,7 @@ class StorageManager:
         try:
             # Try Managed Identity first (works in AI Foundry, App Service, etc.)
             logger.info("Attempting authentication with DefaultAzureCredential (Managed Identity)")
-            credential = DefaultAzureCredential()
+            credential = DefaultAzureCredential(exclude_system_assigned_identity=True)
             return BlobServiceClient(account_url=account_url, credential=credential)
             
         except ClientAuthenticationError as e:
