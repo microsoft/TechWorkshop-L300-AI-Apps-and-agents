@@ -18,7 +18,7 @@ project_endpoint = os.environ["AZURE_AI_AGENT_ENDPOINT"]
 
 project_client = AIProjectClient(
     endpoint=project_endpoint,
-    credential=DefaultAzureCredential(),
+    credential=DefaultAzureCredential(exclude_system_assigned_identity=True),
 )
 
 # Define the set of user-defined callable functions to use as tools (from MCP client)
