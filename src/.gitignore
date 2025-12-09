@@ -48,8 +48,8 @@ out/
 *.swo
 
 # Secret files
-.env
-.env.*
+#.env
+#.env.*
 
 # Azure/ADO
 .azure-pipelines.yml
