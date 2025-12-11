@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  AZURE_CONTAINER_REGISTRY: ${{ secrets.ACR_REGISTRY  }}
   IMAGE_NAME: chat-app
 
 jobs:
@@ -37,5 +37,5 @@ jobs:
       - name: Build and push Docker image
         run: |
           cd src/
-          docker build -t ${{ env.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
