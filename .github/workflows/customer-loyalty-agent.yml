@@ -1,0 +1,81 @@
+on:
+  push:
+    paths:
+      - 'src/app/agents/customerLoyaltyAgent_initializer.py'
+      - 'src/app/tools/discountLogic.py'
+      - 'src/prompts/CustomerLoyaltyAgentPrompt.txt'
+  pull_request:
+    paths:
+      - 'src/app/agents/customerLoyaltyAgent_initializer.py'
+      - 'src/app/tools/discountLogic.py'
+      - 'src/prompts/CustomerLoyaltyAgentPrompt.txt'
+
+name: Run Customer Loyalty Agent
+
+permissions:
+  contents: read
+
+jobs:
+  run-agent:
+    name: Run customerLoyaltyAgent_initializer.py
+    runs-on: ubuntu-latest
+    env:
+      # Expose secrets into the job environment where needed (careful: secrets are masked).
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      ENV_CONTENTS: ${{ secrets.ENV }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Create .env from secret
+        # Write the ENV secret into a .env file the application can read.
+        run: |
+          if [ -z "${{ secrets.ENV }}" ]; then
+            echo "No ENV secrets provided; creating empty .env"
+            touch .env
+          else
+            echo "${{ secrets.ENV }}" > .env
+            echo ".env file created (contents masked)"
+          fi
+
+      - name: Log in to Azure using service principal
+        # Uses the service principal JSON stored in secrets.AZURE_CREDENTIALS.
+        # The azure/login action will make AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET
+        # and AZURE_SUBSCRIPTION_ID available to subsequent steps so azure.ai.* SDKs can use DefaultAzureCredential.
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Install Python dependencies
+        run: |
+          set -e
+          if [ -f requirements.txt ]; then
+            pip install --upgrade pip
+            pip install -r requirements.txt
+          else
+            pip install --upgrade pip
+            # At minimum install the azure package needed. Adjust if your project requires more.
+            pip install azure-ai-projects
+          fi
+
+      - name: Sanity check Azure SDK import
+        run: |
+          python - <<'PY'
+          try:
+              import azure.ai.projects
+              print("azure.ai.projects imported successfully")
+          except Exception as e:
+              print("Warning: could not import azure.ai.projects:", e)
+              # exit non-zero if you want to fail here instead:
+              # raise
+          PY
+
+      - name: Run customer loyalty agent initializer
+        # Run the target Python script. Adjust the path or add extra args if needed.
+        run: |
+          python src/app/agents/customerLoyaltyAgent_initializer.py
