@@ -37,5 +37,5 @@ jobs:
       - name: Build and push Docker image
         run: |
           cd src/
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
