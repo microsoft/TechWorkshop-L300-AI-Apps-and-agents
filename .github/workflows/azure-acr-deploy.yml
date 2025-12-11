@@ -1,41 +1,47 @@
-name: Deploy to Azure Container Registry
+name: Build and push to Azure Container Registry
 
 on:
   push:
     branches:
       - main
-    paths:
-      - 'src/**'
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
-env:
-  AZURE_CONTAINER_REGISTRY: ${{ secrets.ACR_REGISTRY  }}
-  IMAGE_NAME: chat-app
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Create .env file from secret
-        run: 'echo "$ENV" > src/.env'
-        shell: bash
-        env:
-          ENV: ${{ secrets.ENV }}
+      - name: Create .env from secret (temporary, not checked in)
+        run: |
+          # create a temporary .env in the src/ build context from the ENV secret
+          # printf avoids adding an extra newline and does not print the secret value
+          printf '%s' "${{ secrets.ENV }}" > src/.env
+        # do NOT echo or print the secret anywhere
 
       - name: Log in to Azure Container Registry
-        uses: azure/docker-login@v1
+        uses: docker/login-action@v2
         with:
-          login-server: ${{ secrets.ACR_REGISTRY }}
+          registry: ${{ secrets.ACR_REGISTRY }}
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build and push Docker image
+      - name: Build and push image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: ${{ secrets.ACR_REGISTRY }}/techworkshop:latest
+
+      - name: Remove temporary .env
+        if: always()
         run: |
-          cd src/
-          docker build -t ${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ secrets.ACR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          rm -f src/.env
