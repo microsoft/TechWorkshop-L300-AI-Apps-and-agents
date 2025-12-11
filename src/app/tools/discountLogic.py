@@ -8,15 +8,15 @@ from opentelemetry import trace
 from azure.monitor.opentelemetry import configure_azure_monitor
 from azure.ai.agents.telemetry import trace_function
 import time
-# from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
+from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
 
 # Enable Azure Monitor tracing
 application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
-# configure_azure_monitor(connection_string=application_insights_connection_string)
-# OpenAIInstrumentor().instrument()
+configure_azure_monitor(connection_string=application_insights_connection_string)
+OpenAIInstrumentor().instrument()
 
-# scenario = os.path.basename(__file__)
-# tracer = trace.get_tracer(__name__)
+scenario = os.path.basename(__file__)
+tracer = trace.get_tracer(__name__)
 
 #Azure OpenAI
 endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
@@ -44,7 +44,7 @@ def calculate_discount(CustomerID):
     """
 
     start_time = time.time()
-    # @trace_function()
+    @trace_function()
     def get_transaction_data(CustomerID):
         start_time = time.time()
         time.sleep(2)  # Simulating a delay for demonstration purposes
@@ -74,7 +74,7 @@ def calculate_discount(CustomerID):
         end_time = time.time()
         print(f"get_transaction_data Execution Time: {end_time - start_time} seconds")
         return result
-    # @trace_function()    
+    @trace_function()    
     def fetch_loyalty_profile_data(CustomerID:str):
         start_time = time.time()
         """
@@ -115,7 +115,7 @@ def calculate_discount(CustomerID):
                 'Churn': [0.3]
             })
         return df  
-    # @trace_function()
+    @trace_function()
     def discount_logic_using_model(transaction_info,loyalty_info):
         start_time = time.time()
         """
