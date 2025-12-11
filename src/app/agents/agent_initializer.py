@@ -1,3 +1,10 @@
+import os
+from azure.ai.projects import AIProjectClient
+from azure.ai.agents.models import ToolSet
+from dotenv import load_dotenv
+
+load_dotenv()
+
 def initialize_agent(project_client : AIProjectClient, model : str, env_var_name : str, name : str, instructions : str, toolset : ToolSet):
     agent_id = os.environ[env_var_name]
     with project_client:
