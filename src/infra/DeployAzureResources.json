@@ -1,0 +1,342 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.39.26.7824",
+      "templateHash": "16854380566239867042"
+    }
+  },
+  "parameters": {
+    "userPrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Object ID of the user/principal to grant Cosmos DB data access"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "minLength": 1,
+      "metadata": {
+        "description": "Primary location for all resources."
+      }
+    }
+  },
+  "variables": {
+    "cosmosDbName": "[format('{0}-cosmosdb', uniqueString(resourceGroup().id))]",
+    "cosmosDbDatabaseName": "zava",
+    "storageAccountName": "[format('{0}sa', uniqueString(resourceGroup().id))]",
+    "aiFoundryName": "[format('aif-{0}', uniqueString(resourceGroup().id))]",
+    "aiProjectName": "[format('proj-{0}', uniqueString(resourceGroup().id))]",
+    "searchServiceName": "[format('{0}-search', uniqueString(resourceGroup().id))]",
+    "webAppName": "[format('{0}-app', uniqueString(resourceGroup().id))]",
+    "appServicePlanName": "[format('{0}-cosu-asp', uniqueString(resourceGroup().id))]",
+    "logAnalyticsName": "[format('{0}-cosu-la', uniqueString(resourceGroup().id))]",
+    "appInsightsName": "[format('{0}-cosu-ai', uniqueString(resourceGroup().id))]",
+    "webAppSku": "B1",
+    "registryName": "[format('{0}cosureg', uniqueString(resourceGroup().id))]",
+    "registrySku": "Standard",
+    "locations": [
+      {
+        "locationName": "[parameters('location')]",
+        "failoverPriority": 0,
+        "isZoneRedundant": false
+      }
+    ],
+    "cosmosDbBuiltInDataReaderRoleId": "00000000-0000-0000-0000-000000000001",
+    "cosmosDbBuiltInDataContributorRoleId": "00000000-0000-0000-0000-000000000002",
+    "cosmosDbAccountReaderRoleId": "fbdf93bf-df7d-467e-a4d2-9458aa1360c8",
+    "cognitiveServicesOpenAIUserRoleId": "5e0bd9bd-7b93-4f28-af87-19fc36ad61bd",
+    "cognitiveServicesContributorRoleId": "25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "apiVersion": "2023-04-15",
+      "name": "[variables('cosmosDbName')]",
+      "location": "[parameters('location')]",
+      "kind": "GlobalDocumentDB",
+      "properties": {
+        "consistencyPolicy": {
+          "defaultConsistencyLevel": "Session"
+        },
+        "databaseAccountOfferType": "Standard",
+        "locations": "[variables('locations')]",
+        "disableLocalAuth": false
+      },
+      "metadata": {
+        "description": "Creates an Azure Cosmos DB NoSQL account."
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlDatabases",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', variables('cosmosDbName'), variables('cosmosDbDatabaseName'))]",
+      "properties": {
+        "resource": {
+          "id": "[variables('cosmosDbDatabaseName')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      ],
+      "metadata": {
+        "description": "Creates an Azure Cosmos DB NoSQL API database."
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-01-01",
+      "name": "[variables('storageAccountName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "accessTier": "Hot"
+      },
+      "metadata": {
+        "description": "Creates an Azure Storage account."
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts",
+      "apiVersion": "2025-04-01-preview",
+      "name": "[variables('aiFoundryName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "sku": {
+        "name": "S0"
+      },
+      "kind": "AIServices",
+      "properties": {
+        "allowProjectManagement": true,
+        "customSubDomainName": "[variables('aiFoundryName')]",
+        "disableLocalAuth": false
+      }
+    },
+    {
+      "type": "Microsoft.CognitiveServices/accounts/projects",
+      "apiVersion": "2025-04-01-preview",
+      "name": "[format('{0}/{1}', variables('aiFoundryName'), variables('aiProjectName'))]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "properties": {},
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('aiFoundryName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Search/searchServices",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('searchServiceName')]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "sku": {
+        "name": "standard"
+      },
+      "metadata": {
+        "description": "Creates an Azure AI Search service."
+      }
+    },
+    {
+      "type": "Microsoft.OperationalInsights/workspaces",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('logAnalyticsName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "PerGB2018"
+        },
+        "retentionInDays": 90,
+        "workspaceCapping": {
+          "dailyQuotaGb": 1
+        }
+      },
+      "metadata": {
+        "description": "Creates an Azure Log Analytics workspace."
+      }
+    },
+    {
+      "type": "Microsoft.Insights/components",
+      "apiVersion": "2020-02-02-preview",
+      "name": "[variables('appInsightsName')]",
+      "location": "[parameters('location')]",
+      "kind": "web",
+      "properties": {
+        "Application_Type": "web",
+        "WorkspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('logAnalyticsName'))]"
+      ],
+      "metadata": {
+        "description": "Creates an Azure Application Insights resource."
+      }
+    },
+    {
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2022-12-01",
+      "name": "[variables('registryName')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('registrySku')]"
+      },
+      "properties": {
+        "adminUserEnabled": true
+      },
+      "metadata": {
+        "description": "Creates an Azure Container Registry."
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', variables('cosmosDbName'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), parameters('userPrincipalId'), variables('cosmosDbBuiltInDataContributorRoleId')))]",
+      "properties": {
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/{1}', resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), variables('cosmosDbBuiltInDataContributorRoleId'))]",
+        "principalId": "[parameters('userPrincipalId')]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cosmos DB Built-in Data Contributor role to the specified user"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.DocumentDB/databaseAccounts/{0}', variables('cosmosDbName'))]",
+      "name": "[guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cosmosDbAccountReaderRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cosmosDbAccountReaderRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cosmos DB Account Reader Role to AI Search"
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', variables('cosmosDbName'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cosmosDbBuiltInDataReaderRoleId')))]",
+      "properties": {
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/{1}', resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), variables('cosmosDbBuiltInDataReaderRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cosmos DB Built-in Data Reader role to AI Search"
+      }
+    },
+    {
+      "type": "Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments",
+      "apiVersion": "2023-04-15",
+      "name": "[format('{0}/{1}', variables('cosmosDbName'), guid(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cosmosDbBuiltInDataContributorRoleId')))]",
+      "properties": {
+        "roleDefinitionId": "[format('{0}/sqlRoleDefinitions/{1}', resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), variables('cosmosDbBuiltInDataContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "scope": "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cosmos DB Built-in Data Contributor role to AI Search"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.CognitiveServices/accounts/{0}/projects/{1}', variables('aiFoundryName'), variables('aiProjectName'))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts/projects', variables('aiFoundryName'), variables('aiProjectName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cognitiveServicesOpenAIUserRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesOpenAIUserRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts/projects', variables('aiFoundryName'), variables('aiProjectName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cognitive Services OpenAI User role to AI Search on AI Project"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.CognitiveServices/accounts/{0}', variables('aiFoundryName'))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts', variables('aiFoundryName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cognitiveServicesOpenAIUserRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesOpenAIUserRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts', variables('aiFoundryName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cognitive Services OpenAI User role to AI Search on AI Foundry"
+      }
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2022-04-01",
+      "scope": "[format('Microsoft.CognitiveServices/accounts/{0}/projects/{1}', variables('aiFoundryName'), variables('aiProjectName'))]",
+      "name": "[guid(resourceId('Microsoft.CognitiveServices/accounts/projects', variables('aiFoundryName'), variables('aiProjectName')), resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), variables('cognitiveServicesContributorRoleId'))]",
+      "properties": {
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', variables('cognitiveServicesContributorRoleId'))]",
+        "principalId": "[reference(resourceId('Microsoft.Search/searchServices', variables('searchServiceName')), '2023-11-01', 'full').identity.principalId]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.CognitiveServices/accounts/projects', variables('aiFoundryName'), variables('aiProjectName'))]",
+        "[resourceId('Microsoft.Search/searchServices', variables('searchServiceName'))]"
+      ],
+      "metadata": {
+        "description": "Assigns Cognitive Services Contributor role to AI Search on AI Project"
+      }
+    }
+  ],
+  "outputs": {
+    "cosmosDbEndpoint": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('cosmosDbName')), '2023-04-15').documentEndpoint]"
+    },
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    },
+    "searchServiceName": {
+      "type": "string",
+      "value": "[variables('searchServiceName')]"
+    },
+    "container_registry_name": {
+      "type": "string",
+      "value": "[variables('registryName')]"
+    }
+  }
+}

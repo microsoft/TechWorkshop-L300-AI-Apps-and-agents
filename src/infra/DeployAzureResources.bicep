@@ -15,7 +15,7 @@ var webAppName = '${uniqueString(resourceGroup().id)}-app'
 var appServicePlanName = '${uniqueString(resourceGroup().id)}-cosu-asp'
 var logAnalyticsName = '${uniqueString(resourceGroup().id)}-cosu-la'
 var appInsightsName = '${uniqueString(resourceGroup().id)}-cosu-ai'
-var webAppSku = 'S1'
+// var webAppSku = 'P1v4'
 var registryName = '${uniqueString(resourceGroup().id)}cosureg'
 var registrySku = 'Standard'
 
@@ -152,57 +152,57 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-12-01' =
   }
 }
 
-@description('Creates an Azure App Service Plan.')
-resource appServicePlan 'Microsoft.Web/serverFarms@2022-09-01' = {
-  name: appServicePlanName
-  location: location
-  kind: 'linux'
-  properties: {
-    reserved: true
-  }
-  sku: {
-    name: webAppSku
-  }
-}
+// @description('Creates an Azure App Service Plan.')
+// resource appServicePlan 'Microsoft.Web/serverFarms@2022-09-01' = {
+//   name: appServicePlanName
+//   location: location
+//   kind: 'linux'
+//   properties: {
+//     reserved: true
+//   }
+//   sku: {
+//     name: webAppSku
+//   }
+// }
 
-@description('Creates an Azure App Service for Zava.')
-resource appServiceApp 'Microsoft.Web/sites@2022-09-01' = {
-  name: webAppName
-  location: location
-  properties: {
-    serverFarmId: appServicePlan.id
-    httpsOnly: true
-    clientAffinityEnabled: false
-    siteConfig: {
-      linuxFxVersion: 'DOCKER|${containerRegistry.name}.azurecr.io/${uniqueString(resourceGroup().id)}/techworkshopl300/zava'
-      http20Enabled: true
-      minTlsVersion: '1.2'
-      appCommandLine: ''
-      appSettings: [
-        {
-          name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
-          value: 'false'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_URL'
-          value: 'https://${containerRegistry.name}.azurecr.io'
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_USERNAME'
-          value: containerRegistry.name
-        }
-        {
-          name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
-          value: containerRegistry.listCredentials().passwords[0].value
-        }
-        {
-          name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          value: appInsights.properties.InstrumentationKey
-        }
-        ]
-      }
-    }
-}
+// @description('Creates an Azure App Service for Zava.')
+// resource appServiceApp 'Microsoft.Web/sites@2022-09-01' = {
+//   name: webAppName
+//   location: location
+//   properties: {
+//     serverFarmId: appServicePlan.id
+//     httpsOnly: true
+//     clientAffinityEnabled: false
+//     siteConfig: {
+//       linuxFxVersion: 'DOCKER|${containerRegistry.name}.azurecr.io/${uniqueString(resourceGroup().id)}/techworkshopl300/zava'
+//       http20Enabled: true
+//       minTlsVersion: '1.2'
+//       appCommandLine: ''
+//       appSettings: [
+//         {
+//           name: 'WEBSITES_ENABLE_APP_SERVICE_STORAGE'
+//           value: 'false'
+//         }
+//         {
+//           name: 'DOCKER_REGISTRY_SERVER_URL'
+//           value: 'https://${containerRegistry.name}.azurecr.io'
+//         }
+//         {
+//           name: 'DOCKER_REGISTRY_SERVER_USERNAME'
+//           value: containerRegistry.name
+//         }
+//         {
+//           name: 'DOCKER_REGISTRY_SERVER_PASSWORD'
+//           value: containerRegistry.listCredentials().passwords[0].value
+//         }
+//         {
+//           name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+//           value: appInsights.properties.InstrumentationKey
+//         }
+//         ]
+//       }
+//     }
+// }
 
 // Cosmos DB built-in data plane role IDs
 // Reference: https://learn.microsoft.com/en-us/connectors/documentdb/#microsoft-entra-id-authentication-and-cosmos-db-connector
@@ -298,6 +298,6 @@ output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
 output storageAccountName string = storageAccount.name
 output searchServiceName string = searchService.name
 output container_registry_name string = containerRegistry.name
-output application_name string = appServiceApp.name
-output application_url string = appServiceApp.properties.hostNames[0]
+// output application_name string = appServiceApp.name
+// output application_url string = appServiceApp.properties.hostNames[0]
 
