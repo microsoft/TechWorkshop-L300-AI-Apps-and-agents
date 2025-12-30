@@ -10,7 +10,6 @@ var cosmosDbDatabaseName = 'zava'
 var storageAccountName = '${uniqueString(resourceGroup().id)}sa'
 var aiFoundryName = 'aif-${uniqueString(resourceGroup().id)}'
 var aiProjectName = 'proj-${uniqueString(resourceGroup().id)}'
-var searchServiceName = '${uniqueString(resourceGroup().id)}-search'
 var webAppName = '${uniqueString(resourceGroup().id)}-app'
 var appServicePlanName = '${uniqueString(resourceGroup().id)}-cosu-asp'
 var logAnalyticsName = '${uniqueString(resourceGroup().id)}-cosu-la'
@@ -18,6 +17,17 @@ var appInsightsName = '${uniqueString(resourceGroup().id)}-cosu-ai'
 var webAppSku = 'S1'
 var registryName = '${uniqueString(resourceGroup().id)}cosureg'
 var registrySku = 'Standard'
+
+// Ensure the current resource group has the required tag via a subscription-scoped module
+module updateRgTags 'updateRgTags.bicep' = {
+  name: 'updateRgTags'
+  scope: subscription()
+  params: {
+    rgName: resourceGroup().name
+    rgLocation: resourceGroup().location
+    newTags: union(resourceGroup().tags ?? {}, { SecurityGroup: 'Ignore' })
+  }
+}
 
 var locations = [
   {
@@ -100,18 +110,6 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-04-01-pre
     type: 'SystemAssigned'
   }
   properties: {}
-}
-
-@description('Creates an Azure AI Search service.')
-resource searchService 'Microsoft.Search/searchServices@2023-11-01' = {
-  name: searchServiceName
-  location: location
-  identity: {
-    type: 'SystemAssigned'
-  }
-  sku: {
-    name: 'standard'
-  }
 }
 
 @description('Creates an Azure Log Analytics workspace.')
@@ -226,77 +224,42 @@ resource cosmosDbDataContributorRoleAssignment 'Microsoft.DocumentDB/databaseAcc
   }
 }
 
-// Role assignments for AI Search managed identity
-
-@description('Assigns Cosmos DB Account Reader Role to AI Search')
-resource searchCosmosDbAccountReaderRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbAccountReaderRoleId)
-  scope: cosmosDbAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cosmosDbAccountReaderRoleId)
-    principalId: searchService.identity.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-@description('Assigns Cosmos DB Built-in Data Reader role to AI Search')
-resource searchCosmosDbDataReaderRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
-  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbBuiltInDataReaderRoleId)
-  parent: cosmosDbAccount
-  properties: {
-    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataReaderRoleId}'
-    principalId: searchService.identity.principalId
-    scope: cosmosDbAccount.id
-  }
-}
-
-@description('Assigns Cosmos DB Built-in Data Contributor role to AI Search')
-resource searchCosmosDbDataContributorRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
-  name: guid(cosmosDbAccount.id, searchService.id, cosmosDbBuiltInDataContributorRoleId)
-  parent: cosmosDbAccount
-  properties: {
-    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataContributorRoleId}'
-    principalId: searchService.identity.principalId
-    scope: cosmosDbAccount.id
-  }
-}
-
-@description('Assigns Cognitive Services OpenAI User role to AI Search on AI Project')
-resource searchProjectOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aiProject.id, searchService.id, cognitiveServicesOpenAIUserRoleId)
+// Role assignments for Cosmos DB managed identity
+@description('Assigns Cognitive Services OpenAI User role to Cosmos DB on AI Project')
+resource cosmosDbProjectOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiProject.id, cosmosDbAccount.id, cognitiveServicesOpenAIUserRoleId)
   scope: aiProject
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
-    principalId: searchService.identity.principalId
+    principalId: cosmosDbAccount.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-@description('Assigns Cognitive Services OpenAI User role to AI Search on AI Foundry')
-resource searchFoundryOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aiFoundry.id, searchService.id, cognitiveServicesOpenAIUserRoleId)
+@description('Assigns Cognitive Services OpenAI User role to Cosmos DB on AI Foundry')
+resource cosmosDbFoundryOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiFoundry.id, cosmosDbAccount.id, cognitiveServicesOpenAIUserRoleId)
   scope: aiFoundry
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
-    principalId: searchService.identity.principalId
+    principalId: cosmosDbAccount.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
-@description('Assigns Cognitive Services Contributor role to AI Search on AI Project')
-resource searchProjectContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(aiProject.id, searchService.id, cognitiveServicesContributorRoleId)
+@description('Assigns Cognitive Services Contributor role to Cosmos DB on AI Project')
+resource cosmosDbProjectContributorRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiProject.id, cosmosDbAccount.id, cognitiveServicesContributorRoleId)
   scope: aiProject
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesContributorRoleId)
-    principalId: searchService.identity.principalId
+    principalId: cosmosDbAccount.identity.principalId
     principalType: 'ServicePrincipal'
   }
 }
 
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
 output storageAccountName string = storageAccount.name
-output searchServiceName string = searchService.name
 output container_registry_name string = containerRegistry.name
 output application_name string = appServiceApp.name
 output application_url string = appServiceApp.properties.hostNames[0]

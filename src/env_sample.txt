@@ -27,12 +27,6 @@ blob_connection_string=""
 storage_account_name=""
 storage_container_name="zava"
 
-# AI Search credentials
-# NOTE: DO NOT USE QUOTATION MARKS FOR THESE VALUES
-SEARCH_ENDPOINT=
-SEARCH_KEY=
-INDEX_NAME=zava-product-catalog
-
 # Cosmos DB credentials
 COSMOS_ENDPOINT=""
 COSMOS_KEY=""
