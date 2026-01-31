@@ -42,7 +42,7 @@ from utils.message_utils import (
 # Agent Imports
 from app.tools.understandImage import get_image_description
 from services.agent_service import get_or_create_agent_processor
-# from app.tools.singleAgentExample import generate_response
+from app.tools.singleAgentExample import generate_response
 # from app.tools.aiSearchTools import product_recommendations
 # from app.tools.imageCreationTool import create_image
 # from app.servers.mcp_inventory_server import mcp as inventory_mcp
@@ -245,15 +245,16 @@ async def websocket_endpoint(websocket: WebSocket):
             
             chat_history = parse_conversation_history(conversation_history, chat_history, user_message)
             
-            await websocket.send_text(fast_json_dumps({"answer": "This application is not yet ready to serve results. Please check back later.", "agent": None, "cart": persistent_cart}))
+            # await websocket.send_text(fast_json_dumps({"answer": "This application is not yet ready to serve results. Please check back later.", "agent": None, "cart": persistent_cart}))
 
-            # # Single-agent example
-            # try:
-            #     response = generate_response(user_message)
-            #     await websocket.send_text(fast_json_dumps({"answer": response, "agent": "single", "cart": persistent_cart}))
-            # except Exception as e:
-            #     logger.error("Error during single-agent response generation", exc_info=True)
-            #     await websocket.send_text(fast_json_dumps({"answer": "Error during single-agent response generation", "error": str(e), "cart": persistent_cart}))
+            # Single-agent example
+
+            try:
+                response = generate_response(user_message)
+                await websocket.send_text(fast_json_dumps({"answer": response, "agent": "single", "cart": persistent_cart}))
+            except Exception as e:
+                logger.error("Error during single-agent response generation", exc_info=True)
+                await websocket.send_text(fast_json_dumps({"answer": "Error during single-agent response generation", "error": str(e), "cart": persistent_cart}))
 
             # # Multi-agent example with MCP inventory server and handoff service
             # # Run customer loyalty task only once when session starts
