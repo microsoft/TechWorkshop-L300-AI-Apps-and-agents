@@ -57,3 +57,11 @@ out/
 .github/
 parameters.json
 .azure
+.env
+.env.*
+venv/
+**/__pycache__/
+.ipynb_checkpoints/
+.vscode/
+.DS_Store
+*.log
