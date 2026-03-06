@@ -12,7 +12,7 @@ import time
 
 # Enable Azure Monitor tracing
 application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
-# configure_azure_monitor(connection_string=application_insights_connection_string)
+configure_azure_monitor(connection_string=application_insights_connection_string)
 # OpenAIInstrumentor().instrument()
 
 # scenario = os.path.basename(__file__)

@@ -18,6 +18,8 @@ __pycache__/
 env/
 .venv/
 venv/
+.vnenv/
+vnenv/
 ENV/
 .Python
 
