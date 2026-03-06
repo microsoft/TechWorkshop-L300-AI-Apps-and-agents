@@ -1,0 +1,46 @@
+# Required GitHub repository secrets:
+#   ACR_LOGIN_SERVER  - Azure Container Registry login server (e.g. myregistry.azurecr.io)
+#   ACR_USERNAME      - ACR username / service principal app ID
+#   ACR_PASSWORD      - ACR password / service principal secret
+#   ENV               - Full contents of the .env file (all key=value pairs)
+
+name: Build and Push to ACR
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Write .env file
+        run: echo "${{ secrets.ENV }}" > src/.env
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: src
+          file: src/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/techworkshop-app:${{ github.sha }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/techworkshop-app:latest
+
+      - name: Clean up .env file
+        if: always()
+        run: rm -f src/.env
