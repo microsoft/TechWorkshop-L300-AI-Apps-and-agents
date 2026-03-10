@@ -1,4 +1,4 @@
-# Project
+# Project test change
 
 This lab teaches you how to design and build AI applications and agents using Microsoft Foundry. You will learn how to create AI-powered applications that can interact with users, process natural language, and perform tasks based on user guidance. You will also learn how to monitor, troubleshoot, and perform red teaming activities against agents.
 
