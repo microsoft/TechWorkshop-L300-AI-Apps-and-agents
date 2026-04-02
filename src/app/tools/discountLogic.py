@@ -27,7 +27,7 @@ api_version = os.getenv("gpt_api_version")
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(os.path.dirname(current_dir))  # Go up 2 levels from src/tools/ to root
 PROMPT_PATH = os.path.join(project_root, 'prompts', 'DiscountLogicPrompt.txt')
-with open(PROMPT_PATH, 'r') as file:
+with open(PROMPT_PATH, 'r', encoding='utf-8') as file:
     PROMPT = file.read()
 
 @trace_function()
