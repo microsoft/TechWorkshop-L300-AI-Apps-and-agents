@@ -57,3 +57,5 @@ out/
 .github/
 parameters.json
 .azure
+
+.claude/

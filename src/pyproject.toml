@@ -1,0 +1,34 @@
+[project]
+name = "zava-chat-app"
+version = "0.1.0"
+description = "Zava AI Shopping Assistant"
+requires-python = ">=3.12"
+dependencies = [
+    "requests==2.33.1",
+    "python-dotenv==1.2.2",
+    "openai==2.30.0",
+    "pandas==2.3.3",
+    "azure-cosmos==4.15.0",
+    "agent-framework==1.0.0",
+    "agent-framework-core==1.0.0",
+    "agent-framework-azure-ai==1.0.0rc6",
+    "azure-ai-projects==2.0.1",
+    "azure-ai-agents==1.2.0b5",
+    "azure-ai-inference==1.0.0b9",
+    "azure-ai-evaluation[redteam]==1.16.4",
+    "azure-identity==1.25.3",
+    "opentelemetry-sdk==1.40.0",
+    "azure-core-tracing-opentelemetry==1.0.0b12",
+    "azure-monitor-opentelemetry==1.8.7",
+    "opentelemetry-instrumentation-openai-v2==2.3b0",
+    "fastapi==0.135.3",
+    "uvicorn[standard]==0.43.0",
+    "orjson==3.11.8",
+    "numpy==2.2.6",
+    "a2a-sdk[sqlite]==0.3.25",
+    "sse-starlette==3.3.4",
+    "starlette==1.0.0",
+    "mcp==1.27.0",
+    "httpx==0.28.1",
+    "fastmcp==3.2.0",
+]
