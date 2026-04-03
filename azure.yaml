@@ -1,0 +1,5 @@
+name: techworkshop-l300-ai-agents
+infra:
+  provider: bicep
+  path: src/infra
+  module: DeployAzureResources

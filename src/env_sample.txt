@@ -8,7 +8,7 @@ FOUNDRY_API_VERSION="2025-01-01-preview"
 
 # GPT credentials
 gpt_endpoint=""
-gpt_deployment="gpt-5-mini"
+gpt_deployment="gpt-5.4-mini"
 gpt_api_key=""
 gpt_api_version="2025-01-01-preview"
 

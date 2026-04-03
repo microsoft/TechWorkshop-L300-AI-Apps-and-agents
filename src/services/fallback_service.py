@@ -1,7 +1,7 @@
 import time
 from utils.log_utils import log_timing
 
-def call_fallback(llm_client, fallback_prompt: str, gpt_deployment = "gpt-5-mini"):
+def call_fallback(llm_client, fallback_prompt: str, gpt_deployment = "gpt-5.4-mini"):
     """Call the fallback model and return its reply."""
     start_time = time.time()
     

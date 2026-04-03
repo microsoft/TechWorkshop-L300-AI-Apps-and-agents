@@ -3,7 +3,15 @@
 param userPrincipalId string = deployer().objectId
 
 @minLength(1)
-@description('Primary location for all resources.')
+@description('Primary location for all resources. Recommended regions: eastus2, swedencentral, francecentral.')
+@metadata({
+  azd: {
+    type: 'location'
+    usageName: [
+      'OpenAI.GlobalStandard.gpt-5.4-mini, 50'
+    ]
+  }
+})
 param location string = resourceGroup().location
 
 var cosmosDbName = '${uniqueString(resourceGroup().id)}-cosmosdb'
