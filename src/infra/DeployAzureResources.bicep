@@ -228,6 +228,12 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
         targetPort: 8000
         transport: 'http'
       }
+      secrets: [
+        {
+          name: 'applicationinsights-connection-string'
+          value: appInsights.properties.ConnectionString
+        }
+      ]
       registries: [
         {
           server: '${containerRegistry.name}${environment().suffixes.acrLoginServer}'
@@ -245,10 +251,35 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             memory: '2Gi'
           }
           env: [
-            {
-              name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-              value: appInsights.properties.InstrumentationKey
-            }
+            // Auto-configured from deployed resources
+            { name: 'COSMOS_ENDPOINT', value: cosmosDbAccount.properties.documentEndpoint }
+            { name: 'storage_account_name', value: storageAccount.name }
+            { name: 'DATABASE_NAME', value: cosmosDbDatabaseName }
+            { name: 'CONTAINER_NAME', value: 'product_catalog' }
+            { name: 'storage_container_name', value: 'zava' }
+            { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', secretRef: 'applicationinsights-connection-string' }
+            // Telemetry
+            { name: 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT', value: 'true' }
+            { name: 'AZURE_TRACING_GEN_AI_CONTENT_RECORDING_ENABLED', value: 'true' }
+            // Model deployment defaults (names and API versions)
+            { name: 'FOUNDRY_API_VERSION', value: '2025-01-01-preview' }
+            { name: 'gpt_deployment', value: 'gpt-5.4-mini' }
+            { name: 'gpt_api_version', value: '2025-01-01-preview' }
+            { name: 'embedding_deployment', value: 'text-embedding-3-large' }
+            { name: 'embedding_api_version', value: '2025-01-01-preview' }
+            { name: 'phi_4_deployment', value: 'Phi-4' }
+            { name: 'phi_4_api_version', value: '2024-05-01-preview' }
+            // MCP and agent IDs
+            { name: 'MCP_SERVER_URL', value: 'http://localhost:8000/mcp-inventory/sse' }
+            { name: 'customer_loyalty', value: 'customer-loyalty' }
+            { name: 'inventory_agent', value: 'inventory-agent' }
+            { name: 'interior_designer', value: 'interior-designer' }
+            { name: 'cora', value: 'cora' }
+            { name: 'cart_manager', value: 'cart-manager' }
+            { name: 'handoff_service', value: 'handoff-service' }
+            // NOTE: The following must be set after model deployment via
+            // az containerapp update --set-env-vars:
+            //   FOUNDRY_ENDPOINT, gpt_endpoint, embedding_endpoint, phi_4_endpoint
           ]
         }
       ]
