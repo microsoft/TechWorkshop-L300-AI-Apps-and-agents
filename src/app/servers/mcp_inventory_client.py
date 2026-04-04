@@ -75,14 +75,17 @@ class MCPShopperToolsClient:
         Returns:
             The result from the tool call
         """
+        import time as _time
         session = await self._ensure_connected()
         logger.info(f"Calling tool '{tool_name}' with arguments: {arguments}")
 
+        start = _time.perf_counter()
         result_data = await asyncio.wait_for(
             session.call_tool(tool_name, arguments=arguments),
             timeout=timeout,
         )
-        logger.info(f"Tool '{tool_name}' returned: {result_data.content}")
+        elapsed = _time.perf_counter() - start
+        logger.info(f"[MCP] {tool_name} completed in {elapsed:.3f}s")
 
         if result_data.content and len(result_data.content) > 0:
             result = result_data.content[0].text
