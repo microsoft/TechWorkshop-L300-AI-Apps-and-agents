@@ -32,9 +32,6 @@ CONTAINER_NAME="product_catalog"
 # Application Insights credentials
 APPLICATIONINSIGHTS_CONNECTION_STRING=""
 
-# MCP Server URL
-MCP_SERVER_URL="http://localhost:8000/mcp-inventory/sse"
-
 # Agent IDs
 customer_loyalty="customer-loyalty"
 inventory_agent="inventory-agent"

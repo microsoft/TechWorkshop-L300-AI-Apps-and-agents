@@ -49,7 +49,7 @@ def calculate_discount(CustomerID):
     # @trace_function()
     def get_transaction_data(CustomerID):
         start_time = time.time()
-        time.sleep(2)  # Simulating a delay for demonstration purposes
+        time.sleep(0.5)  # Simulating a delay for demonstration purposes
         """
         Simulates connecting to Azure SQL database. Returns the total price for a given customer ID from the transaction data.
         
@@ -87,7 +87,7 @@ def calculate_discount(CustomerID):
             DataFrame containing the query results.
         """
         # This simulates connecting to a Fabric lakehouse to retrieve customer data.
-        time.sleep(2)  
+        time.sleep(0.5)
         # Adding attributes to the current span
         span = trace.get_current_span()
         span.set_attribute("data_fetch_id", CustomerID)

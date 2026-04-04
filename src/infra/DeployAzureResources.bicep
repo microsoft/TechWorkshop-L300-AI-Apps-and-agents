@@ -269,8 +269,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'embedding_api_version', value: '2025-01-01-preview' }
             { name: 'phi_4_deployment', value: 'Phi-4' }
             { name: 'phi_4_api_version', value: '2024-05-01-preview' }
-            // MCP and agent IDs
-            { name: 'MCP_SERVER_URL', value: 'http://localhost:8000/mcp-inventory/sse' }
+            // Agent IDs
             { name: 'customer_loyalty', value: 'customer-loyalty' }
             { name: 'inventory_agent', value: 'inventory-agent' }
             { name: 'interior_designer', value: 'interior-designer' }

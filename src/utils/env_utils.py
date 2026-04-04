@@ -19,13 +19,12 @@ def load_env_vars() -> Dict[str, Optional[str]]:
         'gpt_api_version': os.getenv("gpt_api_version"),
         'FOUNDRY_ENDPOINT': os.getenv("FOUNDRY_ENDPOINT"),
         'FOUNDRY_API_VERSION': os.getenv("FOUNDRY_API_VERSION"),
-        'MCP_SERVER_URL': os.getenv("MCP_SERVER_URL"),
     }
 
 def validate_env_vars(env_vars: Dict[str, Optional[str]]) -> Dict[str, str]:
     """Validate that required environment variables are set and return validated dict."""
     required_vars = [
-        'phi_4_endpoint', 'phi_4_api_version', 'phi_4_deployment', 'MCP_SERVER_URL',
+        'phi_4_endpoint', 'phi_4_api_version', 'phi_4_deployment',
         'FOUNDRY_ENDPOINT', 'FOUNDRY_API_VERSION',
         'gpt_endpoint', 'gpt_deployment', 'gpt_api_version'
     ]

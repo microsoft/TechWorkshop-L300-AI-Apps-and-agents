@@ -23,7 +23,7 @@ MCP Server for Shopping Inventory and Customer Loyalty Tools
 
     cd to the `app/servers` directory and run:
         uv run server mcp_inventory_server stdio
-    Test it in MCP inspector or via an MCP client: 
+    Test it in MCP inspector or via an MCP client:
         mcp dev mcp_inventory_client.py
 """
 # Create an MCP server
@@ -35,10 +35,10 @@ mcp = FastMCP("MCP Shop Inventory Server")
 def get_product_recommendations(question: str) -> str:
     """
     Search for product recommendations based on user query.
-    
+
     Args:
         question: Natural language user query describing what products they're looking for
-    
+
     Returns:
         Product details including ID, name, category, description, image URL, and price
     """
@@ -49,10 +49,10 @@ def get_product_recommendations(question: str) -> str:
 def check_product_inventory(product_id: str) -> str:
     """
     Check inventory availability for a specific product.
-    
+
     Args:
         product_id: The unique product ID to check inventory for
-    
+
     Returns:
         Inventory status and availability information
     """
@@ -64,10 +64,10 @@ def check_product_inventory(product_id: str) -> str:
 def get_customer_discount(customer_id: str) -> str:
     """
     Calculate available discounts for a customer based on their purchase history.
-    
+
     Args:
         customer_id: The customer's unique identifier
-    
+
     Returns:
         Discount information including percentage and final amount
     """
@@ -78,11 +78,11 @@ def get_customer_discount(customer_id: str) -> str:
 def generate_product_image(prompt: str, size: str = "1024x1024") -> str:
     """
     Generate an AI image based on a text description using DALL-E.
-    
+
     Args:
         prompt: Detailed description of the image to generate
         size: Image size (e.g., '1024x1024'), defaults to '1024x1024'
-    
+
     Returns:
         URL or path to the generated image
     """
@@ -91,14 +91,20 @@ def generate_product_image(prompt: str, size: str = "1024x1024") -> str:
 
 
 ### MCP Prompts ###
-# Get the prompts directory path
+# Get the prompts directory path and cache prompts at startup
 PROMPTS_DIR = Path(__file__).parent.parent.parent / 'prompts'
 
+_prompt_cache: Dict[str, str] = {}
+
 def read_prompt_file(filename: str) -> str:
-    """Read a prompt file from the prompts directory."""
+    """Read a prompt file from the prompts directory, with in-memory caching."""
+    if filename in _prompt_cache:
+        return _prompt_cache[filename]
     file_path = PROMPTS_DIR / filename
     with open(file_path, 'r', encoding='utf-8') as f:
-        return f.read()
+        content = f.read()
+    _prompt_cache[filename] = content
+    return content
 
 @mcp.prompt(title="AI Search Tool Prompt")
 def aiSearchToolPrompt(srch_result: str, question: str) -> str:
@@ -110,7 +116,7 @@ def aiSearchToolPrompt(srch_result: str, question: str) -> str:
 def agentPrompt(agent_name: str) -> str:
     """
     Returns the appropriate agent prompt based on the agent name.
-    
+
     Args:
         agent_name: One of 'cora', 'customer_loyalty', 'discount_logic', 'interior_designer', or 'inventory'
     """
@@ -121,7 +127,7 @@ def agentPrompt(agent_name: str) -> str:
         "interior_designer": "InteriorDesignAgentPrompt.txt",
         "inventory": "InventoryAgentPrompt.txt"
     }
-    
+
     agent_name_lower = agent_name.lower()
     if agent_name_lower in prompt_files:
         return read_prompt_file(prompt_files[agent_name_lower])
@@ -129,4 +135,4 @@ def agentPrompt(agent_name: str) -> str:
         return f"Unknown agent name: {agent_name}. Valid options are: cora, customer_loyalty, discount_logic, interior_designer, inventory"
 
 if __name__ == "__main__":
-    mcp.run(transport="sse")
+    mcp.run(transport="stdio")

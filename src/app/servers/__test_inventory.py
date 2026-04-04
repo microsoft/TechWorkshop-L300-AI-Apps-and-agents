@@ -1,32 +1,28 @@
 import asyncio
-import nest_asyncio
+import sys
+from pathlib import Path
 from mcp import ClientSession
-from mcp.client.sse import sse_client
-
-nest_asyncio.apply()  # Needed to run interactive python
+from mcp.client.stdio import stdio_client, StdioServerParameters
 
 """
-Make sure:
-1. The server is running before running this script.
-2. The server is configured to use SSE transport.
-3. The server is listening on port 8000.
+Test the MCP inventory server via stdio transport.
 
-To run the server:
-uv run mcp_inventory_server.py
-To test the client:
-mcp dev mcp_inventory_client.py
+To run:
+    python __test_inventory.py
 """
+
+_SERVER_SCRIPT = str(Path(__file__).parent / "mcp_inventory_server.py")
 
 
 async def main():
-    # Connect to the server using SSE
-    async with sse_client("http://localhost:8000/mcp-inventory/sse") as (read_stream, write_stream):
-        async with ClientSession(read_stream, write_stream) as session:
-            # Initialize the connection
-            await session.initialize()
+    server_params = StdioServerParameters(
+        command=sys.executable,
+        args=[_SERVER_SCRIPT],
+    )
 
-            # List available tools
-            #tools_result = await session.list_tools()
+    async with stdio_client(server_params) as (read_stream, write_stream):
+        async with ClientSession(read_stream, write_stream) as session:
+            await session.initialize()
 
             # List available prompts
             prompts_result = await session.list_prompts()
@@ -34,12 +30,17 @@ async def main():
             for prompt in prompts_result.prompts:
                 print(f"  - {prompt.name}: {prompt.description}")
 
+            # List available tools
             tools_result = await session.list_tools()
             print("Available tools:")
             for tool in tools_result.tools:
                 print(f"  - {tool.name}: {tool.description}")
-            # Call our calculator tool
-            result = await session.call_tool("get_product_recommendations", arguments={"question": "Should paint for a kitchen wall be white?"})
+
+            # Call a tool
+            result = await session.call_tool(
+                "get_product_recommendations",
+                arguments={"question": "Should paint for a kitchen wall be white?"}
+            )
             print(f"Product recommendations: {result.content[0].text}")
 
 
