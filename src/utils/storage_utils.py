@@ -4,9 +4,8 @@ Provides helper functions for accessing Azure Blob Storage using Managed Identit
 """
 
 import os
-from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, ContentSettings
-from azure.core.exceptions import ClientAuthenticationError
 from dotenv import load_dotenv
 from typing import Optional, BinaryIO
 import logging
@@ -45,23 +44,9 @@ class StorageManager:
         
         account_url = f"https://{self.storage_account_name}.blob.core.windows.net"
         
-        try:
-            # Try Managed Identity first (works in Microsoft Foundry, App Service, etc.)
-            logger.info("Attempting authentication with DefaultAzureCredential (Managed Identity)")
-            credential = DefaultAzureCredential()
-            return BlobServiceClient(account_url=account_url, credential=credential)
-            
-        except ClientAuthenticationError as e:
-            logger.warning(f"Managed Identity authentication failed: {e}")
-            
-            # Fallback to connection string for local development
-            blob_connection_string = os.getenv("blob_connection_string", "")
-            if blob_connection_string:
-                logger.info("Falling back to connection string authentication")
-                return BlobServiceClient.from_connection_string(blob_connection_string)
-            else:
-                logger.error("No valid authentication method available")
-                raise Exception("No valid authentication method available for Azure Blob Storage")
+        logger.info("Authenticating with DefaultAzureCredential (Managed Identity)")
+        credential = DefaultAzureCredential()
+        return BlobServiceClient(account_url=account_url, credential=credential)
     
     def upload_blob(self, blob_name: str, data: BinaryIO, content_type: str = None, overwrite: bool = True) -> str:
         """

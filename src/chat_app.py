@@ -151,9 +151,7 @@ async def health_check():
         "timestamp": datetime.datetime.now().isoformat(),
         "environment_vars_configured": {
             "phi_4_endpoint": bool(validated_env_vars.get('phi_4_endpoint')),
-            "phi_4_api_key": bool(validated_env_vars.get('phi_4_api_key')),
             "foundry_endpoint": bool(validated_env_vars.get('FOUNDRY_ENDPOINT')),
-            "foundry_key": bool(validated_env_vars.get('FOUNDRY_KEY')),
             "gpt_endpoint": bool(os.environ.get("gpt_endpoint"))
         }
     }

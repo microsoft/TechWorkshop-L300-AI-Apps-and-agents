@@ -14,13 +14,10 @@ def load_env_vars() -> Dict[str, Optional[str]]:
         'phi_4_endpoint': os.getenv("phi_4_endpoint"),
         'phi_4_deployment': os.getenv("phi_4_deployment"),
         'phi_4_api_version': os.getenv("phi_4_api_version"),
-        'phi_4_api_key': os.getenv("phi_4_api_key"),
         'gpt_endpoint': os.getenv("gpt_endpoint"),
         'gpt_deployment': os.getenv("gpt_deployment"),
-        'gpt_api_key': os.getenv("gpt_api_key"),
         'gpt_api_version': os.getenv("gpt_api_version"),
         'FOUNDRY_ENDPOINT': os.getenv("FOUNDRY_ENDPOINT"),
-        'FOUNDRY_KEY': os.getenv("FOUNDRY_KEY"),
         'FOUNDRY_API_VERSION': os.getenv("FOUNDRY_API_VERSION"),
         'MCP_SERVER_URL': os.getenv("MCP_SERVER_URL"),
     }
@@ -28,9 +25,9 @@ def load_env_vars() -> Dict[str, Optional[str]]:
 def validate_env_vars(env_vars: Dict[str, Optional[str]]) -> Dict[str, str]:
     """Validate that required environment variables are set and return validated dict."""
     required_vars = [
-        'phi_4_endpoint', 'phi_4_api_key', 'phi_4_api_version', 'phi_4_deployment', 'MCP_SERVER_URL',
-        'FOUNDRY_ENDPOINT', 'FOUNDRY_KEY', 'FOUNDRY_API_VERSION',
-        'gpt_endpoint', 'gpt_deployment', 'gpt_api_key', 'gpt_api_version'
+        'phi_4_endpoint', 'phi_4_api_version', 'phi_4_deployment', 'MCP_SERVER_URL',
+        'FOUNDRY_ENDPOINT', 'FOUNDRY_API_VERSION',
+        'gpt_endpoint', 'gpt_deployment', 'gpt_api_version'
     ]
     missing_vars = [var for var in required_vars if not env_vars.get(var)]
     if missing_vars:

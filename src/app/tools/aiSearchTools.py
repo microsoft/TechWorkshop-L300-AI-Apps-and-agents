@@ -3,23 +3,22 @@ import sys
 import requests
 from azure.cosmos import CosmosClient
 from azure.identity import DefaultAzureCredential
-from azure.core.exceptions import AzureError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dotenv import load_dotenv
 load_dotenv()
 
-# Cosmos DB configuration (replace previous search env vars)
+# Cosmos DB configuration
 COSMOS_ENDPOINT = os.environ.get("COSMOS_ENDPOINT")
-COSMOS_KEY = os.environ.get("COSMOS_KEY")
 DATABASE_NAME = os.environ.get("DATABASE_NAME")
 CONTAINER_NAME = os.environ.get("CONTAINER_NAME")
 
 # Embedding service configuration (used to encode the query)
 EMBEDDING_ENDPOINT = os.environ.get("embedding_endpoint")
 EMBEDDING_DEPLOYMENT = os.environ.get("embedding_deployment")
-EMBEDDING_API_KEY = os.environ.get("embedding_api_key")
 EMBEDDING_API_VERSION = os.environ.get("embedding_api_version")
+
+credential = DefaultAzureCredential()
 
 # Validate required Cosmos env vars
 if not COSMOS_ENDPOINT:
@@ -30,38 +29,25 @@ if not CONTAINER_NAME:
     raise ValueError("CONTAINER_NAME environment variable is not set")
 
 
-def get_cosmos_client(endpoint: str | None, key: str | None = None):
+def get_cosmos_client(endpoint: str | None):
     if not endpoint:
         raise ValueError("COSMOS_ENDPOINT must be provided in environment variables")
 
-    # Try Entra ID (managed identity) first
-    try:
-        credential = DefaultAzureCredential()
-        client = CosmosClient(endpoint, credential=credential)
-        _ = list(client.list_databases())
-        return client
-    except AzureError:
-        pass
-
-    # Fallback to key
-    if key:
-        client = CosmosClient(endpoint, key)
-        return client
-
-    raise RuntimeError(
-        "Failed to authenticate to Cosmos DB using DefaultAzureCredential and no valid COSMOS_KEY was provided"
-    )
+    client = CosmosClient(endpoint, credential=credential)
+    _ = list(client.list_databases())
+    return client
 
 
 def get_request_embedding(text: str) -> list[float] | None:
     """Call embedding endpoint and return the embedding vector or None on failure."""
-    if not EMBEDDING_ENDPOINT or not EMBEDDING_DEPLOYMENT or not EMBEDDING_API_KEY or not EMBEDDING_API_VERSION:
-        raise ValueError("Embedding endpoint configuration missing. Set EMBEDDING_ENDPOINT, EMBEDDING_DEPLOYMENT, EMBEDDING_API_KEY, EMBEDDING_API_VERSION")
+    if not EMBEDDING_ENDPOINT or not EMBEDDING_DEPLOYMENT or not EMBEDDING_API_VERSION:
+        raise ValueError("Embedding endpoint configuration missing. Set EMBEDDING_ENDPOINT, EMBEDDING_DEPLOYMENT, EMBEDDING_API_VERSION")
 
     url = EMBEDDING_ENDPOINT.rstrip("/") + f"/openai/deployments/{EMBEDDING_DEPLOYMENT}/embeddings?api-version={EMBEDDING_API_VERSION}"
+    token = credential.get_token("https://cognitiveservices.azure.com/.default")
     headers = {
         "Content-Type": "application/json",
-        "api-key": EMBEDDING_API_KEY,
+        "Authorization": f"Bearer {token.token}",
     }
     payload = {"input": text}
 
@@ -73,7 +59,7 @@ def get_request_embedding(text: str) -> list[float] | None:
 
 
 # Initialize Cosmos client and container
-_cosmos_client = get_cosmos_client(COSMOS_ENDPOINT, COSMOS_KEY)
+_cosmos_client = get_cosmos_client(COSMOS_ENDPOINT)
 _database = _cosmos_client.get_database_client(DATABASE_NAME)
 _container = _database.get_container_client(CONTAINER_NAME)
 

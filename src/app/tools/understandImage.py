@@ -2,19 +2,22 @@ import os
 from openai import AzureOpenAI
 import time
 
+from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from dotenv import load_dotenv
 load_dotenv()
 
 # Retrieve credentials from .env file or environment
 endpoint = os.getenv("gpt_endpoint")
 deployment = os.getenv("gpt_deployment")
-api_key = os.getenv("gpt_api_key")
 api_version = os.getenv("gpt_api_version")
 
-# Initialize Azure OpenAI client for GPT model
+# Initialize Azure OpenAI client for GPT model using managed identity
+credential = DefaultAzureCredential()
+token_provider = get_bearer_token_provider(credential, "https://cognitiveservices.azure.com/.default")
+
 client = AzureOpenAI(
     azure_endpoint=endpoint,
-    api_key=api_key,
+    azure_ad_token_provider=token_provider,
     api_version=api_version,
 )
 
