@@ -158,7 +158,7 @@ class HandoffService:
 
             response = self.client.responses.create(
                 conversation=conversation.id,
-                extra_body={"agent": {"name": "handoff-service", "type": "agent_reference"}},
+                extra_body={"agent_reference": {"name": "handoff-service", "type": "agent_reference"}},
                 input=""
             )
 

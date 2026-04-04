@@ -32,7 +32,7 @@ TOOL_NAME_MAP: Dict[str, str] = {
 
 # Defines which local tool names each agent type can use.
 AGENT_TOOL_ASSIGNMENTS: Dict[str, List[str]] = {
-    "interior_designer": ["mcp_create_image", "mcp_product_recommendations"],
+    "interior_designer": ["mcp_product_recommendations"],
     "customer_loyalty": ["mcp_calculate_discount"],
     "inventory_agent": ["mcp_inventory_check"],
     "cart_manager": [],

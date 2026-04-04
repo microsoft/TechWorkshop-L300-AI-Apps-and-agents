@@ -234,18 +234,13 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           value: appInsights.properties.ConnectionString
         }
       ]
-      registries: [
-        {
-          server: '${containerRegistry.name}${environment().suffixes.acrLoginServer}'
-          identity: 'system'
-        }
-      ]
+      registries: []
     }
     template: {
       containers: [
         {
           name: 'chat-app'
-          image: '${containerRegistry.name}${environment().suffixes.acrLoginServer}/chat-app:latest'
+          image: 'mcr.microsoft.com/k8se/quickstart:latest'
           resources: {
             cpu: json('1.0')
             memory: '2Gi'

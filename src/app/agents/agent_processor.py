@@ -87,7 +87,7 @@ class AgentProcessor:
 
         messages = openai_client.responses.create(
             conversation=thread_id,
-            extra_body={"agent": {"name": self.agent_id, "type": "agent_reference"}},
+            extra_body={"agent_reference": {"name": self.agent_id, "type": "agent_reference"}},
             input="",
             stream=True
         )
@@ -149,7 +149,7 @@ class AgentProcessor:
                 _executor,
                 lambda: openai_client.responses.create(
                     conversation=thread_id,
-                    extra_body={"agent": {"name": self.agent_id, "type": "agent_reference"}},
+                    extra_body={"agent_reference": {"name": self.agent_id, "type": "agent_reference"}},
                     input="",
                     stream=False
                 )
@@ -166,7 +166,7 @@ class AgentProcessor:
                     lambda: openai_client.responses.create(
                         input=input_list,
                         previous_response_id=message.id,
-                        extra_body={"agent": {"name": self.agent_id, "type": "agent_reference"}},
+                        extra_body={"agent_reference": {"name": self.agent_id, "type": "agent_reference"}},
                     )
                 )
 
