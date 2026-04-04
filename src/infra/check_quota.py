@@ -18,13 +18,10 @@ import sys
 
 DEFAULT_REGIONS = ["eastus2", "swedencentral", "francecentral"]
 
-# App Service Plan S1 requires 1 core from the Standard S-series vCPU family.
-REQUIRED_APP_SERVICE_CORES = 1
-
 REQUIRED_PROVIDERS = [
     "Microsoft.DocumentDB",
     "Microsoft.CognitiveServices",
-    "Microsoft.Web",
+    "Microsoft.App",
     "Microsoft.ContainerRegistry",
     "Microsoft.OperationalInsights",
     "Microsoft.Insights",
@@ -36,7 +33,7 @@ PROVIDER_RESOURCE_CHECKS = [
     ("Microsoft.DocumentDB", "databaseAccounts", "Cosmos DB (NoSQL)"),
     ("Microsoft.ContainerRegistry", "registries", "Container Registry"),
     ("Microsoft.CognitiveServices", "accounts", "AI Services (Microsoft Foundry)"),
-    ("Microsoft.Web", "serverFarms", "App Service"),
+    ("Microsoft.App", "containerApps", "Container Apps"),
 ]
 
 # ---------- helpers ----------
@@ -133,36 +130,6 @@ def check_providers() -> bool:
 
 # ---------- per-region checks ----------
 
-def check_vm_quota(region: str) -> bool:
-    """Check that the region has enough S-series VM cores for App Service S1."""
-    usage_data = az_json(["vm", "list-usage", "--location", region, "-o", "json"])
-    if not usage_data:
-        failed("App Service VM quota: unable to query (check permissions)")
-        return False
-
-    # Try Standard S-series first, then fall back to total regional vCPUs.
-    for family in ("standardSFamily", "cores"):
-        for item in usage_data:
-            name = item.get("name", {}).get("value", "")
-            if name == family:
-                available = int(item["limit"]) - int(item["currentValue"])
-                if available >= REQUIRED_APP_SERVICE_CORES:
-                    passed(
-                        f"App Service VM quota: {available} cores available "
-                        f"(need {REQUIRED_APP_SERVICE_CORES})"
-                    )
-                    return True
-                else:
-                    failed(
-                        f"App Service VM quota: {available} cores available, "
-                        f"need {REQUIRED_APP_SERVICE_CORES}"
-                    )
-                    return False
-
-    failed("App Service VM quota: unable to find S-series or regional core quota")
-    return False
-
-
 def check_provider_region(
     namespace: str, resource_type: str, display_name: str, region: str
 ) -> bool:
@@ -184,9 +151,6 @@ def check_provider_region(
 def check_region(region: str) -> bool:
     header(f"Region: {region}")
     region_ok = True
-
-    if not check_vm_quota(region):
-        region_ok = False
 
     for namespace, resource_type, display_name in PROVIDER_RESOURCE_CHECKS:
         if not check_provider_region(namespace, resource_type, display_name, region):
