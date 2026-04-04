@@ -342,6 +342,40 @@ resource cosmosDbProjectContributorRole 'Microsoft.Authorization/roleAssignments
   }
 }
 
+// Container App role assignments
+@description('Assigns Cosmos DB Built-in Data Contributor role to the Container App managed identity')
+resource containerAppCosmosDbDataContributorRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2023-04-15' = {
+  name: guid(cosmosDbAccount.id, containerApp.id, cosmosDbBuiltInDataContributorRoleId)
+  parent: cosmosDbAccount
+  properties: {
+    roleDefinitionId: '${cosmosDbAccount.id}/sqlRoleDefinitions/${cosmosDbBuiltInDataContributorRoleId}'
+    principalId: containerApp.identity.principalId
+    scope: cosmosDbAccount.id
+  }
+}
+
+@description('Assigns Cognitive Services OpenAI User role to the Container App on AI Project')
+resource containerAppProjectOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiProject.id, containerApp.id, cognitiveServicesOpenAIUserRoleId)
+  scope: aiProject
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+@description('Assigns Cognitive Services OpenAI User role to the Container App on Microsoft Foundry')
+resource containerAppFoundryOpenAIUserRole 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(aiFoundry.id, containerApp.id, cognitiveServicesOpenAIUserRoleId)
+  scope: aiFoundry
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', cognitiveServicesOpenAIUserRoleId)
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
 output cosmosDbEndpoint string = cosmosDbAccount.properties.documentEndpoint
 output storageAccountName string = storageAccount.name
 output container_registry_name string = containerRegistry.name
