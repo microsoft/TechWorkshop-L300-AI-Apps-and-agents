@@ -1,0 +1,38 @@
+{
+  "description": "Zava Handoff Service Agent",
+  "definition": {
+    "kind": "prompt",
+    "model": "${GPT_DEPLOYMENT}",
+    "instructions": "${INSTRUCTIONS}",
+    "tools": [],
+    "text": {
+      "format": {
+        "type": "json_schema",
+        "name": "IntentClassification",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string",
+              "description": "Target domain: cora, interior_designer, inventory_agent, customer_loyalty, or cart_manager"
+            },
+            "is_domain_change": {
+              "type": "boolean",
+              "description": "Whether this represents a change from the current domain"
+            },
+            "confidence": {
+              "type": "number",
+              "description": "Confidence score between 0.0 and 1.0"
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "Brief explanation of the classification decision"
+            }
+          },
+          "required": ["domain", "is_domain_change", "confidence", "reasoning"],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

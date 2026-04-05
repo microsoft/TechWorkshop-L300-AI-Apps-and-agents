@@ -1,0 +1,26 @@
+{
+  "description": "Zava Inventory Agent",
+  "definition": {
+    "kind": "prompt",
+    "model": "${GPT_DEPLOYMENT}",
+    "instructions": "${INSTRUCTIONS}",
+    "tools": [
+      {
+        "type": "function",
+        "name": "mcp_inventory_check",
+        "description": "Check inventory availability for products.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "product_list": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "List of product IDs to check inventory for."
+            }
+          },
+          "required": ["product_list"]
+        }
+      }
+    ]
+  }
+}

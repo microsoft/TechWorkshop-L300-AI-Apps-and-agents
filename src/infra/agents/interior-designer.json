@@ -1,0 +1,25 @@
+{
+  "description": "Zava Interior Design Agent",
+  "definition": {
+    "kind": "prompt",
+    "model": "${GPT_DEPLOYMENT}",
+    "instructions": "${INSTRUCTIONS}",
+    "tools": [
+      {
+        "type": "function",
+        "name": "mcp_product_recommendations",
+        "description": "Search for product recommendations based on user query.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "Natural language user query describing what products they're looking for"
+            }
+          },
+          "required": ["question"]
+        }
+      }
+    ]
+  }
+}

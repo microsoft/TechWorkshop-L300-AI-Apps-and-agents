@@ -31,17 +31,22 @@ jobs:
       - name: Build and push Docker image
         run: |
           cd src/
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest .
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Login via Azure CLI
         uses: azure/login@v2.1.1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Container App
-        uses: azure/container-apps-deploy-action@v2
-        with:
-          containerAppName: ${{ secrets.AZURE_CONTAINER_APP_NAME }}
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          imageToDeploy: ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      - name: Deploy new container image with environment variables
+        run: |
+          az containerapp update \
+            --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --set-env-vars \
+              FOUNDRY_ENDPOINT="${{ secrets.FOUNDRY_ENDPOINT }}" \
+              gpt_endpoint="${{ secrets.GPT_ENDPOINT }}" \
+              embedding_endpoint="${{ secrets.EMBEDDING_ENDPOINT }}" \
+              phi_4_endpoint="${{ secrets.PHI_4_ENDPOINT }}"

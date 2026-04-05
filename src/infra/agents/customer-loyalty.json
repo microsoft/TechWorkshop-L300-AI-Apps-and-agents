@@ -1,0 +1,25 @@
+{
+  "description": "Zava Customer Loyalty Agent",
+  "definition": {
+    "kind": "prompt",
+    "model": "${GPT_DEPLOYMENT}",
+    "instructions": "${INSTRUCTIONS}",
+    "tools": [
+      {
+        "type": "function",
+        "name": "mcp_calculate_discount",
+        "description": "Calculate available discounts for a customer based on their purchase history.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "customer_id": {
+              "type": "string",
+              "description": "The customer's unique identifier"
+            }
+          },
+          "required": ["customer_id"]
+        }
+      }
+    ]
+  }
+}

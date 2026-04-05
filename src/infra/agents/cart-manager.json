@@ -1,0 +1,9 @@
+{
+  "description": "Zava Cart Manager Agent",
+  "definition": {
+    "kind": "prompt",
+    "model": "${GPT_DEPLOYMENT}",
+    "instructions": "${INSTRUCTIONS}",
+    "tools": []
+  }
+}
