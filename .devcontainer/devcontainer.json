@@ -6,8 +6,10 @@
 	"features": {
 		"ghcr.io/azure/azure-dev/azd:0": {},
 		"ghcr.io/rchaganti/vsc-devcontainer-features/azurebicep:1": {},
-        "ghcr.io/devcontainers/features/azure-cli:1": {}
+		"ghcr.io/devcontainers/features/azure-cli:1": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
+	"postCreateCommand": "curl -LsSf https://astral.sh/uv/install.sh | sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [
