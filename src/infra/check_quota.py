@@ -68,6 +68,7 @@ def az(args: list[str]) -> str:
             capture_output=True,
             text=True,
             timeout=60,
+            shell=True,
         )
         return result.stdout.strip()
     except (subprocess.TimeoutExpired, FileNotFoundError):
