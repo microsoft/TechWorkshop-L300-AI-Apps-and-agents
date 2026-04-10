@@ -103,3 +103,16 @@ async def get_tools_for_agent(agent_type: str) -> List[FunctionTool]:
     await _discover_tools()
     tool_names = AGENT_TOOL_ASSIGNMENTS.get(agent_type, [])
     return [_discovered_tools[name] for name in tool_names if name in _discovered_tools]
+
+
+async def get_tools_for_agent_oneshot(agent_type: str) -> List[FunctionTool]:
+    """Discover tools and close the MCP connection before returning.
+
+    Use this in one-shot initializer scripts that call asyncio.run().
+    Closing the MCP client before the event loop tears down prevents the
+    RuntimeError from anyio's cancel scope cleanup.
+    """
+    tools = await get_tools_for_agent(agent_type)
+    client = await get_mcp_client()
+    await client.close()
+    return tools
