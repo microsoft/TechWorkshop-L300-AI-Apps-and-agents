@@ -50,4 +50,3 @@ jobs:
               gpt_endpoint="${{ secrets.GPT_ENDPOINT }}" \
               embedding_endpoint="${{ secrets.EMBEDDING_ENDPOINT }}" \
               phi_4_endpoint="${{ secrets.PHI_4_ENDPOINT }}"
-``
