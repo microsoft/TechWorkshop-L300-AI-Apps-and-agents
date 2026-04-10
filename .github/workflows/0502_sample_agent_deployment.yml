@@ -1,0 +1,49 @@
+name: Deploy Customer Loyalty Agent
+
+on:
+  push:
+    paths:
+      - 'src/prompts/CustomerLoyaltyAgentPrompt.txt'
+      - 'src/infra/agents/customer-loyalty.json'
+      - '.github/workflows/customer_loyalty_agent_update.yml'
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  deploy-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login via Azure CLI
+        uses: azure/login@v2.1.1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy customer-loyalty agent to Foundry
+        env:
+          FOUNDRY_ENDPOINT: ${{ secrets.FOUNDRY_ENDPOINT }}
+          GPT_DEPLOYMENT: ${{ secrets.GPT_DEPLOYMENT }}
+        run: |
+          # Read the prompt file and escape it for JSON
+          INSTRUCTIONS=$(python3 -c "
+          import json, sys
+          with open('src/prompts/CustomerLoyaltyAgentPrompt.txt', 'r') as f:
+              print(json.dumps(f.read()))
+          ")
+
+          # Build the request body from the template, substituting variables
+          jq --arg model "$GPT_DEPLOYMENT" \
+             --argjson instructions "$INSTRUCTIONS" \
+             '.definition.model = $model | .definition.instructions = $instructions' \
+             src/infra/agents/customer-loyalty.json > /tmp/agent-payload.json
+
+          # Create/update the agent version via Foundry REST API
+          az rest --method POST \
+            --url "${FOUNDRY_ENDPOINT}/agents/customer-loyalty/versions?api-version=2025-11-15-preview" \
+            --headers "Content-Type=application/json" \
+            --resource "https://ai.azure.com" \
+            --body @/tmp/agent-payload.json
+
+          echo "Customer loyalty agent deployed successfully."
