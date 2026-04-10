@@ -11,13 +11,13 @@ import orjson  # Faster JSON library
 from dotenv import load_dotenv
 from opentelemetry import trace
 import logging
-# from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
+from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
 
 # Azure & OpenAI Imports
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from openai import AzureOpenAI
-# from azure.monitor.opentelemetry import configure_azure_monitor
+from azure.monitor.opentelemetry import configure_azure_monitor
 # from azure.ai.agents.telemetry import trace_function
 
 # FastAPI Imports
@@ -43,11 +43,11 @@ from utils.message_utils import (
 from app.tools.understandImage import get_image_description
 from services.agent_service import get_or_create_agent_processor
 # from handlers.single_agent_handler import handle_single_agent
-# from handlers.multi_agent_handler import (
-#     classify_intent, enrich_context, execute_agent,
-#     handle_image_creation, process_response,
-# )
-# from services.handoff_service import HandoffService
+from handlers.multi_agent_handler import (
+    classify_intent, enrich_context, execute_agent,
+    handle_image_creation, process_response,
+)
+from services.handoff_service import HandoffService
 
 
 load_dotenv()
@@ -64,9 +64,9 @@ logger = logging.getLogger(__name__)
 # Global thread pool executor for CPU-bound operations
 thread_pool = ThreadPoolExecutor(max_workers=4)
 
-# application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
-# configure_azure_monitor(connection_string=application_insights_connection_string)
-# OpenAIInstrumentor().instrument()
+application_insights_connection_string = os.environ["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+configure_azure_monitor(connection_string=application_insights_connection_string)
+OpenAIInstrumentor().instrument()
 
 scenario = os.path.basename(__file__)
 tracer = trace.get_tracer(__name__)
@@ -125,18 +125,18 @@ project_client = AIProjectClient(
     credential=DefaultAzureCredential(),
 )
 
-# # LLM client for the handoff service.
-# # Retrieves an AzureOpenAI client from the project client.
-# # Handoff service determines which agent to route to based on intent classification.
-# # The default for this is Cora, the general shopping assistant.
-# llm_client = project_client.get_openai_client()
+# LLM client for the handoff service.
+# Retrieves an AzureOpenAI client from the project client.
+# Handoff service determines which agent to route to based on intent classification.
+# The default for this is Cora, the general shopping assistant.
+llm_client = project_client.get_openai_client()
 
-# handoff_service = HandoffService(
-#     azure_openai_client=llm_client,
-#     deployment_name=validated_env_vars['gpt_deployment'],
-#     default_domain="cora",
-#     lazy_classification=True
-# )
+handoff_service = HandoffService(
+    azure_openai_client=llm_client,
+    deployment_name=validated_env_vars['gpt_deployment'],
+    default_domain="cora",
+    lazy_classification=True
+)
 
 @app.get("/")
 async def get():
@@ -244,7 +244,7 @@ async def websocket_endpoint(websocket: WebSocket):
             
             chat_history = parse_conversation_history(conversation_history, chat_history, user_message)
             
-            await websocket.send_text(fast_json_dumps({"answer": "This application is not yet ready to serve results. Please check back later.", "agent": None, "cart": persistent_cart}))
+            # await websocket.send_text(fast_json_dumps({"answer": "This application is not yet ready to serve results. Please check back later.", "agent": None, "cart": persistent_cart}))
 
             # =================================================================
             # EXERCISE 02: Single-agent example
@@ -261,92 +261,92 @@ async def websocket_endpoint(websocket: WebSocket):
             # each step.
             # =================================================================
 
-            # # --- Step 1: Run customer loyalty in background (once per session) ---
-            # customer_id = "CUST001"
-            # if not customer_loyalty_executed:
-            #     asyncio.create_task(run_customer_loyalty_task(customer_id))
-            #     customer_loyalty_executed = True
+            # --- Step 1: Run customer loyalty in background (once per session) ---
+            customer_id = "CUST001"
+            if not customer_loyalty_executed:
+                asyncio.create_task(run_customer_loyalty_task(customer_id))
+                customer_loyalty_executed = True
 
-            # # --- Step 2: Classify intent and select agent ---
-            # try:
-            #     formatted_history = format_chat_history(
-            #         redact_bad_prompts_in_history(chat_history, bad_prompts)
-            #     )
-            #     with tracer.start_as_current_span("Handoff Intent Classification"):
-            #         agent_name, agent_selected = await classify_intent(
-            #             handoff_service, user_message, session_id,
-            #             formatted_history, validated_env_vars,
-            #             websocket, persistent_cart,
-            #         )
-            #     if not agent_name:
-            #         continue
-            # except Exception as e:
-            #     logger.error("Error during handoff classification", exc_info=True)
-            #     await websocket.send_text(fast_json_dumps({
-            #         "answer": "Error during handoff classification",
-            #         "error": str(e), "cart": persistent_cart,
-            #     }))
-            #     continue
+            # --- Step 2: Classify intent and select agent ---
+            try:
+                formatted_history = format_chat_history(
+                    redact_bad_prompts_in_history(chat_history, bad_prompts)
+                )
+                with tracer.start_as_current_span("Handoff Intent Classification"):
+                    agent_name, agent_selected = await classify_intent(
+                        handoff_service, user_message, session_id,
+                        formatted_history, validated_env_vars,
+                        websocket, persistent_cart,
+                    )
+                if not agent_name:
+                    continue
+            except Exception as e:
+                logger.error("Error during handoff classification", exc_info=True)
+                await websocket.send_text(fast_json_dumps({
+                    "answer": "Error during handoff classification",
+                    "error": str(e), "cart": persistent_cart,
+                }))
+                continue
 
-            # # --- Step 3: Enrich context and execute agent ---
-            # try:
-            #     agent_execution_start_time = time.time()
-            #
-            #     # Special case: image creation
-            #     if agent_name == "interior_designer_create_image":
-            #         response_data = await handle_image_creation(
-            #             user_message, persistent_image_url, image_cache,
-            #             get_cached_image_description, session_discount_percentage,
-            #             persistent_cart, websocket,
-            #         )
-            #         await websocket.send_text(fast_json_dumps(response_data))
-            #         continue
-            #
-            #     # Enrich message with image + product context
-            #     enriched_message = await enrich_context(
-            #         user_message, agent_name, image_url, image_cache,
-            #         get_cached_image_description, websocket, persistent_cart,
-            #     )
-            #
-            #     # Prepare agent-specific context
-            #     agent_context = enriched_message
-            #     if agent_name == "cart_manager":
-            #         agent_context += f"\n\nRAW_IO_HISTORY:\n{fast_json_dumps(list(raw_io_history), option=orjson.OPT_INDENT_2)}"
-            #     elif agent_name == "cora":
-            #         agent_context = f"{formatted_history}\n\nUser: {enriched_message}"
-            #
-            #     # Execute agent
-            #     bot_reply = await execute_agent(
-            #         agent_name, agent_selected, agent_context,
-            #         project_client, tracer,
-            #     )
-            #     log_timing("Agent Execution", agent_execution_start_time, f"Agent: {agent_name}")
-            #
-            #     # --- Step 4: Process response and update session state ---
-            #     parsed_response, session_discount_percentage, persistent_cart = process_response(
-            #         bot_reply, agent_name, session_discount_percentage, persistent_cart,
-            #     )
-            #
-            #     bot_answer = parsed_response.get("answer", bot_reply or "")
-            #     product_names = extract_product_names_from_response(parsed_response)
-            #     chat_history.append(("bot", bot_answer + product_names))
-            #     chat_history = clean_conversation_history(chat_history)
-            #
-            #     response_json = fast_json_dumps({**parsed_response, "cart": persistent_cart})
-            #     raw_io_history.append({"output": response_json, "cart": persistent_cart})
-            #     await websocket.send_text(response_json)
-            #
-            #     # Send delayed loyalty response after first cart operation
-            #     if agent_name == "cart_manager" and session_loyalty_response and not loyalty_response_sent:
-            #         await websocket.send_text(fast_json_dumps({**session_loyalty_response, "cart": persistent_cart}))
-            #         loyalty_response_sent = True
-            #
-            # except Exception as e:
-            #     logger.error("Error in agent execution", exc_info=True)
-            #     await websocket.send_text(fast_json_dumps({
-            #         "answer": "Internal server error",
-            #         "error": str(e), "cart": persistent_cart,
-            #     }))
+            # --- Step 3: Enrich context and execute agent ---
+            try:
+                agent_execution_start_time = time.time()
+            
+                # Special case: image creation
+                if agent_name == "interior_designer_create_image":
+                    response_data = await handle_image_creation(
+                        user_message, persistent_image_url, image_cache,
+                        get_cached_image_description, session_discount_percentage,
+                        persistent_cart, websocket,
+                    )
+                    await websocket.send_text(fast_json_dumps(response_data))
+                    continue
+            
+                # Enrich message with image + product context
+                enriched_message = await enrich_context(
+                    user_message, agent_name, image_url, image_cache,
+                    get_cached_image_description, websocket, persistent_cart,
+                )
+            
+                # Prepare agent-specific context
+                agent_context = enriched_message
+                if agent_name == "cart_manager":
+                    agent_context += f"\n\nRAW_IO_HISTORY:\n{fast_json_dumps(list(raw_io_history), option=orjson.OPT_INDENT_2)}"
+                elif agent_name == "cora":
+                    agent_context = f"{formatted_history}\n\nUser: {enriched_message}"
+            
+                # Execute agent
+                bot_reply = await execute_agent(
+                    agent_name, agent_selected, agent_context,
+                    project_client, tracer,
+                )
+                log_timing("Agent Execution", agent_execution_start_time, f"Agent: {agent_name}")
+            
+                # --- Step 4: Process response and update session state ---
+                parsed_response, session_discount_percentage, persistent_cart = process_response(
+                    bot_reply, agent_name, session_discount_percentage, persistent_cart,
+                )
+            
+                bot_answer = parsed_response.get("answer", bot_reply or "")
+                product_names = extract_product_names_from_response(parsed_response)
+                chat_history.append(("bot", bot_answer + product_names))
+                chat_history = clean_conversation_history(chat_history)
+            
+                response_json = fast_json_dumps({**parsed_response, "cart": persistent_cart})
+                raw_io_history.append({"output": response_json, "cart": persistent_cart})
+                await websocket.send_text(response_json)
+            
+                # Send delayed loyalty response after first cart operation
+                if agent_name == "cart_manager" and session_loyalty_response and not loyalty_response_sent:
+                    await websocket.send_text(fast_json_dumps({**session_loyalty_response, "cart": persistent_cart}))
+                    loyalty_response_sent = True
+            
+            except Exception as e:
+                logger.error("Error in agent execution", exc_info=True)
+                await websocket.send_text(fast_json_dumps({
+                    "answer": "Internal server error",
+                    "error": str(e), "cart": persistent_cart,
+                }))
     
     # =============================================================================
     # SESSION-LEVEL ERROR HANDLING: Catch WebSocket disconnects and errors
