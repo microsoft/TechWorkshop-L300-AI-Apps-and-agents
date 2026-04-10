@@ -6,10 +6,10 @@ on:
       - main
     paths:
       - 'src/**'
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   AZURE_CONTAINER_REGISTRY: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
   IMAGE_NAME: chat-app
 
@@ -30,23 +30,24 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          cd src/
-          docker build -t ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
-          docker push ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cd src
+          docker build -t $AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:${{ github.sha }} .
+          docker push $AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:${{ github.sha }}
 
       - name: Login via Azure CLI
-        uses: azure/login@v2.1.1
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy new container image with environment variables
+      - name: Deploy new container image
         run: |
           az containerapp update \
-            --name ${{ secrets.AZURE_CONTAINER_APP_NAME }} \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.AZURE_CONTAINER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --name "${{ secrets.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --image "$AZURE_CONTAINER_REGISTRY/$IMAGE_NAME:${{ github.sha }}" \
             --set-env-vars \
               FOUNDRY_ENDPOINT="${{ secrets.FOUNDRY_ENDPOINT }}" \
               gpt_endpoint="${{ secrets.GPT_ENDPOINT }}" \
               embedding_endpoint="${{ secrets.EMBEDDING_ENDPOINT }}" \
               phi_4_endpoint="${{ secrets.PHI_4_ENDPOINT }}"
+``
