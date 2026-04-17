@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,11 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to Azure
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Log in to Azure Container Registry
         uses: docker/login-action@v3
         with:
@@ -30,21 +24,26 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v5
         with:
           context: ./src
-          file: ./src/Dockerfile
           push: true
-          tags: ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.CONTAINER_APP_IMAGE_NAME }}:${{ github.sha }}
+          tags: ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.ACR_IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure Container App
-        run: |
-          az containerapp update \
-            --name "${{ secrets.CONTAINER_APP_NAME }}" \
-            --resource-group "${{ secrets.CONTAINER_APP_RESOURCE_GROUP }}" \
-            --image "${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.CONTAINER_APP_IMAGE_NAME }}:${{ github.sha }}" \
-            --set-env-vars \
-              FOUNDRY_ENDPOINT="${{ secrets.FOUNDRY_ENDPOINT }}" \
-              gpt_endpoint="${{ secrets.gpt_endpoint }}" \
-              embedding_endpoint="${{ secrets.embedding_endpoint }}" \
-              phi_4_endpoint="${{ secrets.phi_4_endpoint }}"
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          acrName: ${{ secrets.ACR_NAME }}
+          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
+          resourceGroup: ${{ secrets.RESOURCE_GROUP }}
+          imageToDeploy: ${{ secrets.ACR_LOGIN_SERVER }}/${{ secrets.ACR_IMAGE_NAME }}:${{ github.sha }}
+          environmentVariables: >
+            FOUNDRY_ENDPOINT=${{ secrets.FOUNDRY_ENDPOINT }}
+            gpt_endpoint=${{ secrets.GPT_ENDPOINT }}
+            embedding_endpoint=${{ secrets.EMBEDDING_ENDPOINT }}
+            phi_4_endpoint=${{ secrets.PHI_4_ENDPOINT }}
