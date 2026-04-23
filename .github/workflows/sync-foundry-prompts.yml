@@ -1,0 +1,118 @@
+name: Sync prompts to Foundry agents
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/prompts/**.txt'
+      - 'src/prompts/agent_map.json'
+      - '.github/workflows/sync-foundry-prompts.yml'
+  workflow_dispatch:
+    inputs:
+      files:
+        description: 'Space-separated list of prompt files under src/prompts/ to force-sync (leave empty to sync all mapped)'
+        required: false
+        default: ''
+
+jobs:
+  sync-prompts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Determine changed prompt files
+        id: changed
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            INPUT="${{ github.event.inputs.files }}"
+            if [[ -z "$INPUT" ]]; then
+              FILES=$(jq -r 'keys[] | "src/prompts/" + .' src/prompts/agent_map.json)
+            else
+              FILES=""
+              for f in $INPUT; do
+                case "$f" in
+                  src/prompts/*) FILES+="$f"$'\n' ;;
+                  *) FILES+="src/prompts/$f"$'\n' ;;
+                esac
+              done
+            fi
+          else
+            FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- 'src/prompts/*.txt' || true)
+          fi
+          echo "Changed files:"
+          echo "$FILES"
+          {
+            echo "files<<EOF"
+            echo "$FILES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update Foundry agents
+        if: steps.changed.outputs.files != ''
+        env:
+          FOUNDRY_PROJECT_ENDPOINT: ${{ secrets.FOUNDRY_PROJECT_ENDPOINT }}
+          API_VERSION: 'v1'
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${FOUNDRY_PROJECT_ENDPOINT:-}" ]]; then
+            echo "::error::FOUNDRY_PROJECT_ENDPOINT secret is not set."
+            exit 1
+          fi
+
+          ENDPOINT="${FOUNDRY_PROJECT_ENDPOINT%/}"
+
+          TOKEN=$(az account get-access-token \
+            --resource https://ai.azure.com \
+            --query accessToken -o tsv)
+
+          MAP_FILE="src/prompts/agent_map.json"
+          if [[ ! -f "$MAP_FILE" ]]; then
+            echo "::error::Missing $MAP_FILE"
+            exit 1
+          fi
+
+          FAILED=0
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            [[ ! -f "$file" ]] && { echo "Skip missing file: $file"; continue; }
+
+            name=$(basename "$file")
+            agent_id=$(jq -r --arg k "$name" '.[$k] // empty' "$MAP_FILE")
+
+            if [[ -z "$agent_id" || "$agent_id" == "asst_REPLACE_ME" ]]; then
+              echo "::warning::No agent_id mapped for $name; skipping."
+              continue
+            fi
+
+            echo "Updating agent $agent_id from $file ..."
+            payload=$(jq -Rs '{instructions: .}' < "$file")
+
+            http_code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+              -X PATCH \
+              "${ENDPOINT}/assistants/${agent_id}?api-version=${API_VERSION}" \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$payload")
+
+            if [[ "$http_code" =~ ^2 ]]; then
+              echo "✓ Updated $agent_id (HTTP $http_code)"
+            else
+              echo "::error::Failed to update $agent_id (HTTP $http_code)"
+              cat /tmp/resp.json || true
+              echo
+              FAILED=1
+            fi
+          done <<< "${{ steps.changed.outputs.files }}"
+
+          exit $FAILED

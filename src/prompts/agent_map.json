@@ -1,0 +1,9 @@
+{
+  "ShopperAgentPrompt.txt": "asst_REPLACE_ME",
+  "InventoryAgentPrompt.txt": "asst_REPLACE_ME",
+  "CustomerLoyaltyAgentPrompt.txt": "asst_REPLACE_ME",
+  "CartManagerPrompt.txt": "asst_REPLACE_ME",
+  "HandoffAgentPrompt.txt": "asst_REPLACE_ME",
+  "InteriorDesignAgentPrompt.txt": "asst_REPLACE_ME",
+  "DiscountLogicPrompt.txt": "asst_REPLACE_ME"
+}
