@@ -42,25 +42,20 @@ jobs:
           push: true
           tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
-      - name: Update Container App secrets
-        run: |
-          az containerapp secret set \
-            --name ${{ env.CONTAINER_APP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --secrets \
-              foundry-endpoint="${{ secrets.FOUNDRY_ENDPOINT }}" \
-              gpt-endpoint="${{ secrets.gpt_endpoint }}" \
-              embedding-endpoint="${{ secrets.embedding_endpoint }}" \
-              phi-4-endpoint="${{ secrets.phi_4_endpoint }}"
-
       - name: Deploy to Azure Container App
         uses: azure/container-apps-deploy-action@v2
         with:
           resourceGroup: ${{ env.RESOURCE_GROUP }}
           containerAppName: ${{ env.CONTAINER_APP_NAME }}
           imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-          environmentVariables: >-
-            FOUNDRY_ENDPOINT=secretref:foundry-endpoint
-            gpt_endpoint=secretref:gpt-endpoint
-            embedding_endpoint=secretref:embedding-endpoint
-            phi_4_endpoint=secretref:phi-4-endpoint
+
+      - name: Update Container App env vars
+        run: |
+          az containerapp update \
+            --name ${{ secrets.CONTAINER_APP_NAME }} \
+            --resource-group ${{ secrets.RESOURCE_GROUP }} \
+            --set-env-vars \
+              "FOUNDRY_ENDPOINT=${{ secrets.FOUNDRY_ENDPOINT }}" \
+              "gpt_endpoint=${{ secrets.FOUNDRY_ENDPOINT }}" \
+              "embedding_endpoint=${{ secrets.FOUNDRY_ENDPOINT }}" \
+              "phi_4_endpoint=${{ secrets.FOUNDRY_ENDPOINT }}"
