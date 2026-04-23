@@ -1,0 +1,72 @@
+name: Build and Deploy to Azure Container App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy-container-app.yml'
+  workflow_dispatch:
+
+env:
+  ACR_NAME: ee7w6hqmzbu4ycosureg
+  ACR_LOGIN_SERVER: ee7w6hqmzbu4ycosureg.azurecr.io
+  IMAGE_NAME: app-ee7w6hqmzbu4y
+  CONTAINER_APP_NAME: app-ee7w6hqmzbu4y
+  RESOURCE_GROUP: rg-aidf-lab
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Log in to Azure Container Registry
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: ./src/Dockerfile
+          push: true
+          tags: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Update Container App secrets
+        run: |
+          az containerapp secret set \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --secrets \
+              foundry-endpoint="${{ secrets.FOUNDRY_ENDPOINT }}" \
+              gpt-endpoint="${{ secrets.gpt_endpoint }}" \
+              embedding-endpoint="${{ secrets.embedding_endpoint }}" \
+              phi-4-endpoint="${{ secrets.phi_4_endpoint }}"
+
+      - name: Deploy to Azure Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          resourceGroup: ${{ env.RESOURCE_GROUP }}
+          containerAppName: ${{ env.CONTAINER_APP_NAME }}
+          imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          environmentVariables: >-
+            FOUNDRY_ENDPOINT=secretref:foundry-endpoint
+            gpt_endpoint=secretref:gpt-endpoint
+            embedding_endpoint=secretref:embedding-endpoint
+            phi_4_endpoint=secretref:phi-4-endpoint
